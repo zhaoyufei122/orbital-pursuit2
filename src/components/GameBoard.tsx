@@ -39,8 +39,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   // 计算度数映射
   const getDegreeLabel = (x: number) => {
     // 线性映射: x=0 -> -0.5, x=GRID_W-1 -> +0.5
-    // 假设场景宽度总覆盖约 1.0 度 (-0.5 to +0.5)
-    // 如果是小地图，可能度数范围不同，这里暂且沿用 -0.5 ~ +0.5 的映射逻辑
     const deg = -0.5 + (x / (scenario.gridW - 1));
     const val = deg.toFixed(2);
     if (Math.abs(deg) < 0.001) return '0°';
@@ -48,7 +46,12 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   };
 
   const getRowLabel = (y: number) => {
-    const val = centerRow - y;
+    // 之前逻辑：centerRow - y (上正下负)
+    // 现在逻辑：y - centerRow (上负下正)
+    // y=0 (Top) -> 0 - 5 = -5
+    // y=5 (Center) -> 5 - 5 = 0
+    // y=10 (Bottom) -> 10 - 5 = +5
+    const val = y - centerRow;
     if (val === 0) return '0';
     return `${val > 0 ? '+' : ''}${val}`;
   };

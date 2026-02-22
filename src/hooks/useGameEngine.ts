@@ -26,7 +26,13 @@ export interface GameEngine {
   handleLongScan: (targetRect: { minX: number; maxX: number; minY: number; maxY: number }) => void;
   getValidMoves: (player: Player, fromX: number) => { x: number; y: number }[]; // Added
   resources: Record<Player, Resources>;
-  lastScan: Record<Player, { turn: number; detectedColumn: number | null; detectedPos: Pos | null } | null>;
+  lastScan: Record<Player, {
+    turn: number;
+    scanType?: 'SHORT' | 'LONG';
+    detectedColumn: number | null;
+    detectedPos: Pos | null;
+    scannedRect?: { minX: number; maxX: number; minY: number; maxY: number };
+  } | null>;
   hasPerformedScan: boolean;
 }
 

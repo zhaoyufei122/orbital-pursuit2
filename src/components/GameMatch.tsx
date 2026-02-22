@@ -40,11 +40,31 @@ export const GameMatch: React.FC<GameMatchProps> = ({ engine, onBackToMenu }) =>
   const [isScanning, setIsScanning] = useState(false);
 
   const handleToggleScanMode = () => {
+    // 如果已经执行过侦察，不响应长观测按钮
+    if (hasPerformedScan) return;
     setIsScanning(!isScanning);
+  };
+
+  const handleShortScanWrapper = () => {
+    // 如果已经执行过侦察，不执行短观测
+    if (hasPerformedScan) return;
+    
+    // 如果当前正处于长观测选择模式（isScanning=true），先取消该模式，再执行短观测
+    if (isScanning) {
+      setIsScanning(false);
+    }
+    
+    handleShortScan();
   };
 
   const handleCellClick = (x: number, y: number) => {
     if (!scenario) return;
+
+    // 如果在长观测模式下，但本回合已经执行过侦察（理论上按钮已禁用，这里做双重保险），则退出扫描模式
+    if (isScanning && hasPerformedScan) {
+        setIsScanning(false);
+        return;
+    }
 
     if (isScanning) {
       // 侦察模式逻辑
@@ -122,6 +142,7 @@ export const GameMatch: React.FC<GameMatchProps> = ({ engine, onBackToMenu }) =>
         <div className="flex-1 w-full flex items-center justify-center overflow-hidden min-h-0">
           {scenario && (
             <GameBoard 
+              turn={turn} // Pass turn
               aPos={aPos} 
               bPos={bPos} 
               matchPhase={matchPhase} 
@@ -155,7 +176,7 @@ export const GameMatch: React.FC<GameMatchProps> = ({ engine, onBackToMenu }) =>
                 scenario={scenario}
                 isValidMove={isValidMove}
                 onPlayerMove={handlePlayerMove}
-                onShortScan={handleShortScan}
+                onShortScan={handleShortScanWrapper}
                 onToggleScanMode={handleToggleScanMode}
                 isScanning={isScanning}
                 turn={turn}

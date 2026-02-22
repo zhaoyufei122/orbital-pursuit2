@@ -43,8 +43,10 @@ export interface GameState {
   // 新增：每个玩家最后一次的侦察结果
   lastScan: Record<Player, {
     turn: number;
+    scanType: 'SHORT' | 'LONG';
     detectedColumn: number | null;
     detectedPos: Pos | null;
+    scannedRect?: { minX: number; maxX: number; minY: number; maxY: number }; // 记录长观测的区域
   } | null>;
   
   // 新增：当前回合当前玩家是否已执行侦察

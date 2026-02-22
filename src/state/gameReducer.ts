@@ -94,6 +94,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       const result = {
         turn: state.turn,
+        scanType: 'SHORT' as const,
         detectedColumn: opponentPos.x,
         detectedPos: null,
       };
@@ -127,8 +128,10 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       const result = {
         turn: state.turn,
+        scanType: 'LONG' as const,
         detectedColumn: null,
         detectedPos: inRect ? opponentPos : null,
+        scannedRect: targetRect,
       };
 
       return {

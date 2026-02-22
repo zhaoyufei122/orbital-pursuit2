@@ -6,19 +6,27 @@ import type { Pos, MatchPhase } from '../types';
 import type { GameScenario } from '../config/scenarios';
 
 interface GameBoardProps {
+  turn: number; // Added turn prop
   aPos: Pos;
   bPos: Pos;
   matchPhase: MatchPhase;
   scenario: GameScenario;
-  currentPlayer: Player | null; // 添加 currentPlayer 以支持迷雾逻辑
-  isHumanTurn: boolean;         // 用于区分 AI 思考时是否显示真实信息（如果是热座，通常显示当前行动者视角）
-  scanResult: { turn: number; detectedColumn: number | null; detectedPos: Pos | null } | null;
+  currentPlayer: Player | null;
+  isHumanTurn: boolean;
+  scanResult: { 
+    turn: number; 
+    scanType?: 'SHORT' | 'LONG';
+    detectedColumn: number | null; 
+    detectedPos: Pos | null;
+    scannedRect?: { minX: number; maxX: number; minY: number; maxY: number };
+  } | null;
   onCellClick?: (x: number, y: number) => void;
   isScanning?: boolean;
-  validMoves?: { x: number; y: number }[]; // Added
+  validMoves?: { x: number; y: number }[];
 }
 
 export const GameBoard: React.FC<GameBoardProps> = ({ 
+  turn, // Destructure turn
   aPos, 
   bPos, 
   matchPhase, 
@@ -131,8 +139,22 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             const isScannedColumn = scanResult?.detectedColumn === x;
             const isScannedPos = scanResult?.detectedPos?.x === x && scanResult?.detectedPos?.y === y;
             
-            // 检查是否是合法移动目标
+            // Check if cell is within Long Scan Rect
+            const inScannedRect = 
+                scanResult?.scanType === 'LONG' && 
+                scanResult.scannedRect &&
+                x >= scanResult.scannedRect.minX && x <= scanResult.scannedRect.maxX &&
+                y >= scanResult.scannedRect.minY && y <= scanResult.scannedRect.maxY;
+
+            const isScanFresh = scanResult?.turn === turn;
+            // 调整历史数据样式：不再过度变暗，而是稍微降低饱和度和亮度，保持可读性
+            const opacityClass = isScanFresh ? 'opacity-100 z-10' : 'opacity-60 brightness-75 grayscale-[30%] z-0';
+            
             const isValidMoveTarget = !isScanning && validMoves?.some(m => m.x === x && m.y === y);
+            const isCurrentPos = (currentPlayer === 'A' && aPos.x === x && aPos.y === y) || (currentPlayer === 'B' && bPos.x === x && bPos.y === y);
+
+            // Determine if any scan overlay should be rendered
+            const showScanOverlay = isScannedColumn || isScannedPos || (inScannedRect && !scanResult?.detectedPos) || (inScannedRect && scanResult?.detectedPos && !isScannedPos);
 
             return (
               <div
@@ -144,22 +166,38 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                       ? 'bg-blue-500/5 border border-blue-400/10'
                       : 'bg-slate-800/10 border border-slate-700/20'
                   }
-                  ${isScannedColumn ? 'bg-amber-500/20 border-amber-500/40' : ''}
-                  ${isScannedPos ? 'bg-red-500/30 border-red-500/60' : ''}
                   ${isScanning ? 'cursor-crosshair hover:bg-amber-500/30 hover:border-amber-400' : ''}
-                  ${isValidMoveTarget ? 'cursor-pointer border-2 border-emerald-500/50 bg-emerald-500/20 hover:bg-emerald-500/40 hover:scale-105 shadow-[0_0_10px_rgba(16,185,129,0.3)]' : ''}
+                  ${isValidMoveTarget && !isCurrentPos ? 'cursor-pointer z-30 border-2 border-emerald-400/80 bg-emerald-500/40 hover:bg-emerald-500/60 hover:scale-105 shadow-[0_0_15px_rgba(52,211,153,0.6)]' : ''}
+                  ${isValidMoveTarget && isCurrentPos ? 'cursor-pointer z-30 border-2 border-white/70 bg-white/20 hover:bg-white/30' : ''}
                 `}
                 style={{ left: pos.x, top: pos.y }}
               >
-                {/* 移动目标的幽灵图标 */}
-                {isValidMoveTarget && (
-                  <div className="absolute inset-0 flex items-center justify-center opacity-50 pointer-events-none">
+                 {/* 观测结果背景层 - 独立出来，避免影响移动图标，但要通过 opacityClass 控制其视觉衰减 */}
+                 {showScanOverlay && (
+                    <div className={`absolute inset-0 pointer-events-none rounded-sm transition-all duration-300 ${opacityClass}
+                      ${isScannedColumn ? 'bg-amber-500/20 border border-amber-500/40 shadow-[0_0_10px_rgba(245,158,11,0.2)]' : ''}
+                      ${isScannedPos ? 'bg-red-500/40 border border-red-500/80 shadow-[0_0_15px_rgba(239,68,68,0.4)]' : ''}
+                      ${inScannedRect && !scanResult?.detectedPos ? 'bg-slate-700/30 border border-slate-600/40 border-dashed' : ''}
+                      ${inScannedRect && scanResult?.detectedPos && !isScannedPos ? 'bg-red-900/10 border border-red-900/20' : ''}
+                    `} />
+                 )}
+
+                {/* 移动目标的幽灵图标 - 层级在观测层之上 */}
+                {isValidMoveTarget && !isCurrentPos && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
                     {currentPlayer === 'A' ? (
-                      <Satellite size={16} className="text-emerald-300" />
+                      <Satellite size={16} className="text-emerald-100 drop-shadow-md" />
                     ) : (
-                      <Rocket size={16} className="text-emerald-300" />
+                      <Rocket size={16} className="text-emerald-100 drop-shadow-md" />
                     )}
                   </div>
+                )}
+                
+                {/* 当前位置作为移动目标的提示 (Hold Position) */}
+                {isValidMoveTarget && isCurrentPos && (
+                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                     <span className="text-[10px] font-mono text-white font-bold drop-shadow-md">HOLD</span>
+                   </div>
                 )}
 
                 {/* 锁定框只在 B 视角或无迷雾时可见，或者是游戏结束 */}
@@ -174,7 +212,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
         {/* 蓝方卫星 A */}
         {isAVisible && (
           <motion.div
-            className={`absolute w-[40px] h-[40px] flex items-center justify-center text-blue-400 z-30 drop-shadow-[0_0_8px_rgba(96,165,250,0.8)] ${
+            className={`absolute w-[40px] h-[40px] flex items-center justify-center text-blue-400 z-30 pointer-events-none drop-shadow-[0_0_8px_rgba(96,165,250,0.8)] ${
               isFogActive && currentPlayer !== 'A' ? 'opacity-70 grayscale' : ''
             }`}
             initial={false}
@@ -191,7 +229,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
         {/* 红方追击者 B */}
         {isBVisible && (
           <motion.div
-            className={`absolute w-[40px] h-[40px] flex items-center justify-center text-red-400 z-40 drop-shadow-[0_0_8px_rgba(248,113,113,0.8)] ${
+            className={`absolute w-[40px] h-[40px] flex items-center justify-center text-red-400 z-40 pointer-events-none drop-shadow-[0_0_8px_rgba(248,113,113,0.8)] ${
               isFogActive && currentPlayer !== 'B' ? 'opacity-70 grayscale' : ''
             }`}
             initial={false}

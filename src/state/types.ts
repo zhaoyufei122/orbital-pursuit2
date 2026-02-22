@@ -30,6 +30,25 @@ export interface GameState {
   currentPlayer: Player;
   pendingAMove: Pos | null;
   bTimeInRange: number;
+
+  // 资源与侦察
+  resources: Record<Player, Resources>;
+  // 废弃旧的 scanResult，改为每个玩家独立的侦察记录
+  // scanResult: {
+  //   turn: number;
+  //   detectedColumn: number | null;
+  //   detectedPos: Pos | null;
+  // } | null;
+  
+  // 新增：每个玩家最后一次的侦察结果
+  lastScan: Record<Player, {
+    turn: number;
+    detectedColumn: number | null;
+    detectedPos: Pos | null;
+  } | null>;
+  
+  // 新增：当前回合当前玩家是否已执行侦察
+  hasPerformedScan: boolean;
 }
 
 export const INITIAL_RESOURCES: Resources = {

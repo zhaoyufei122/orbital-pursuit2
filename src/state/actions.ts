@@ -6,4 +6,6 @@ export type GameAction =
   | { type: 'START_AI_MATCH'; payload: { role: Player; scenario?: GameScenario } }
   | { type: 'PLAYER_MOVE'; payload: { selectedY: number } }
   | { type: 'RESET_GAME' }
-  | { type: 'SET_SCENARIO'; payload: { scenario: GameScenario } };
+  | { type: 'SET_SCENARIO'; payload: { scenario: GameScenario } }
+  | { type: 'SCAN_SHORT' }
+  | { type: 'SCAN_LONG'; payload: { targetRect: { minX: number; maxX: number; minY: number; maxY: number } } };

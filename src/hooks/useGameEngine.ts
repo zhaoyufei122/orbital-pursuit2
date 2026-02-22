@@ -22,6 +22,11 @@ export interface GameEngine {
   startHotseat: (scenario: GameScenario) => void;
   startAIMatch: (role: Player, scenario: GameScenario) => void;
   handlePlayerMove: (selectedY: number) => void;
+  handleShortScan: () => void;
+  handleLongScan: (targetRect: { minX: number; maxX: number; minY: number; maxY: number }) => void;
+  resources: Record<Player, Resources>;
+  lastScan: Record<Player, { turn: number; detectedColumn: number | null; detectedPos: Pos | null } | null>;
+  hasPerformedScan: boolean;
 }
 
 export const useGameEngine = (): GameEngine => {
@@ -39,6 +44,10 @@ export const useGameEngine = (): GameEngine => {
     winner,
     pendingAMove,
     scenario,
+    resources,
+    // scanResult, // Removed
+    lastScan,      // Added
+    hasPerformedScan, // Added
   } = state;
 
   const isAIMode = mode === 'ai';
@@ -68,6 +77,14 @@ export const useGameEngine = (): GameEngine => {
   const handlePlayerMove = (selectedY: number) => {
     dispatch({ type: 'PLAYER_MOVE', payload: { selectedY } });
   };
+
+  const handleShortScan = useCallback(() => {
+    dispatch({ type: 'SCAN_SHORT' });
+  }, []);
+
+  const handleLongScan = useCallback((targetRect: { minX: number; maxX: number; minY: number; maxY: number }) => {
+    dispatch({ type: 'SCAN_LONG', payload: { targetRect } });
+  }, []);
 
   // --- AI 自动行动 ---
   useEffect(() => {
@@ -116,5 +133,10 @@ export const useGameEngine = (): GameEngine => {
     startHotseat,
     startAIMatch,
     handlePlayerMove,
+    handleShortScan,
+    handleLongScan,
+    resources,
+    lastScan,
+    hasPerformedScan,
   };
 };

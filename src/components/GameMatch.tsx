@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BookOpen, Satellite } from 'lucide-react';
 import { GameBoard } from './GameBoard';
 import { GameStatus } from './GameStatus';
@@ -28,7 +28,40 @@ export const GameMatch: React.FC<GameMatchProps> = ({ engine, onBackToMenu }) =>
     handlePlayerMove,
     startHotseat,
     startAIMatch,
+    handleShortScan,
+    handleLongScan,
+    resources,
+    // scanResult, // Removed
+    lastScan,      // Added
+    hasPerformedScan, // Added
   } = engine;
+
+  const [isScanning, setIsScanning] = useState(false);
+
+  const handleToggleScanMode = () => {
+    setIsScanning(!isScanning);
+  };
+
+  const handleCellClick = (x: number, y: number) => {
+    if (!isScanning || !scenario) return;
+
+    // 计算 10x10 区域，以 (x, y) 为中心
+    // 10x10 意味着半径约为 5。
+    // 左上角: x - 5, y - 5 (如果 10 是偶数，中心偏左上或右下，这里假设 x-4 到 x+5 或 x-5 到 x+4)
+    // 让我们用 x-5 到 x+4，共 10 格。
+    // y 同理。
+    
+    // 边界检查：minX >= 0, maxX < gridW
+    // 但实际上扫描区域可以超出边界，只是无效而已。为了逻辑简单，我们计算理论区域，reducer 会处理是否命中。
+    
+    const minX = Math.max(0, x - 5);
+    const maxX = Math.min(scenario.gridW - 1, x + 4);
+    const minY = Math.max(0, y - 5);
+    const maxY = Math.min(scenario.gridH - 1, y + 4);
+    
+    handleLongScan({ minX, maxX, minY, maxY });
+    setIsScanning(false);
+  };
 
   const currentModeLabel =
     mode === 'hotseat'
@@ -84,7 +117,25 @@ export const GameMatch: React.FC<GameMatchProps> = ({ engine, onBackToMenu }) =>
 
         {/* 游戏地图区域 - 占据最大空间 */}
         <div className="flex-1 w-full flex items-center justify-center overflow-hidden min-h-0">
-          {scenario && <GameBoard aPos={aPos} bPos={bPos} matchPhase={matchPhase} scenario={scenario} />}
+          {scenario && (
+            <GameBoard 
+              aPos={aPos} 
+              bPos={bPos} 
+              matchPhase={matchPhase} 
+              scenario={scenario}
+              currentPlayer={isHumanTurn ? currentPlayer : humanRole}
+              isHumanTurn={isHumanTurn}
+              scanResult={lastScan ? (
+                mode === 'hotseat' 
+                  ? lastScan[currentPlayer] // 热座模式：显示当前行动玩家的信息
+                  : humanRole 
+                    ? lastScan[humanRole]   // AI 模式：显示人类玩家的信息
+                    : null
+              ) : null}
+              onCellClick={handleCellClick}
+              isScanning={isScanning}
+            />
+          )}
         </div>
 
         {/* 控制面板 - 固定在底部 */}
@@ -100,6 +151,11 @@ export const GameMatch: React.FC<GameMatchProps> = ({ engine, onBackToMenu }) =>
                 scenario={scenario}
                 isValidMove={isValidMove}
                 onPlayerMove={handlePlayerMove}
+                onShortScan={handleShortScan}
+                onToggleScanMode={handleToggleScanMode}
+                isScanning={isScanning}
+                turn={turn}
+                hasPerformedScan={hasPerformedScan}
               />
             )
           ) : (

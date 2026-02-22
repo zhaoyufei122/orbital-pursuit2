@@ -29,33 +29,38 @@ export const getTimeOfDay = (turn: number): TimeOfDay => {
 };
 
 // 检查地基观测是否允许
-// 规则：
+// 规则（当 observationTimeRestriction 或 weatherEnabled 为 true 时）：
 // - DAY: 无法观测
 // - DAWN/DUSK: 仅短观测 (假设光照条件只适合巡天)
 // - NIGHT: 全功能 (长/短观测均可)
-// - 天气: CLOUDY 时无法进行任何地基观测 (或者大幅降低成功率，这里简化为无法观测)
+// - 天气 (仅 weatherEnabled 时): CLOUDY 时无法进行任何地基观测
 export const isGroundObservationAllowed = (
   turn: number, 
   weather: Weather, 
   scanType: 'SHORT' | 'LONG',
   scenario: GameScenario
 ): { allowed: boolean; reason?: string } => {
-  if (!scenario.weatherEnabled) return { allowed: true };
+  const shouldCheckTime = scenario.weatherEnabled || scenario.observationTimeRestriction === true;
+  const shouldCheckWeather = scenario.weatherEnabled;
 
-  // 1. 天气检查
-  if (weather === 'CLOUDY') {
+  if (!shouldCheckTime && !shouldCheckWeather) return { allowed: true };
+
+  // 1. 天气检查 (仅启用天气系统时)
+  if (shouldCheckWeather && weather === 'CLOUDY') {
     return { allowed: false, reason: 'Cloudy weather, ground observation obstructed' };
   }
 
   // 2. 时间检查
-  const time = getTimeOfDay(turn);
-  
-  if (time === 'DAY') {
-    return { allowed: false, reason: 'Daylight glare, imaging impossible' };
-  }
+  if (shouldCheckTime) {
+    const time = getTimeOfDay(turn);
 
-  if ((time === 'DAWN' || time === 'DUSK') && scanType === 'LONG') {
-    return { allowed: false, reason: 'Short scan only during Dawn/Dusk' };
+    if (time === 'DAY') {
+      return { allowed: false, reason: 'Daylight glare, imaging impossible' };
+    }
+
+    if ((time === 'DAWN' || time === 'DUSK') && scanType === 'LONG') {
+      return { allowed: false, reason: 'Short scan only during Dawn/Dusk' };
+    }
   }
 
   return { allowed: true };

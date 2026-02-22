@@ -1,5 +1,6 @@
 import { useReducer, useEffect, useCallback } from 'react';
 import type { Player, MatchPhase, Mode, Pos, Weather } from '../types';
+import type { Resources } from '../state/types';
 import { gameReducer, initialState } from '../state/gameReducer';
 import { isValidMove as checkValidMove, getValidOrbs as getAllValidOrbs, calcNextPos } from '../game/rules';
 import { assessGameState } from '../game/ai';

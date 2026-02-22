@@ -1,6 +1,7 @@
 import React from 'react';
 import { MAX_TURNS } from '../constants';
-import type { Player, Resources } from '../types';
+import type { Player } from '../types';
+import type { Resources } from '../state/types';
 
 interface GameStatusProps {
   turn: number;
@@ -8,24 +9,33 @@ interface GameStatusProps {
   currentPlayer: Player;
   resources: Record<Player, Resources>;
   scenario: any; // Using any for simplicity here to access maxTurns
+  /** When true, renders inline without container (for embedding in GameControls) */
+  embedded?: boolean;
+  /** When true with embedded, compact horizontal layout for left-right bar */
+  compact?: boolean;
 }
 
-export const GameStatus: React.FC<GameStatusProps> = ({ turn, bTimeInRange, currentPlayer, resources, scenario }) => {
+export const GameStatus: React.FC<GameStatusProps> = ({ turn, bTimeInRange, currentPlayer, resources, scenario, embedded, compact }) => {
+  const isCompact = embedded && compact;
   return (
-    <div className="flex flex-wrap justify-center gap-4 md:gap-8 mb-5 bg-slate-900/60 backdrop-blur-md p-4 rounded-2xl border border-slate-800/60 shadow-xl z-20">
-      <div className="flex flex-col items-center px-4">
+    <div className={
+      isCompact ? 'flex flex-nowrap items-center gap-2' :
+      embedded ? 'flex flex-wrap items-center justify-center gap-3 md:gap-6 py-2' :
+      'flex flex-wrap items-center gap-3 md:gap-6 mb-5 bg-slate-900/60 backdrop-blur-md p-4 rounded-2xl border border-slate-800/60 shadow-xl z-20'
+    }>
+      <div className={`flex flex-col items-center ${isCompact ? 'px-2' : 'px-4'}`}>
         <span className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-1">
           Turn
         </span>
-        <span className="text-3xl font-mono text-white">
-          {turn} <span className="text-slate-600 text-lg">/ {scenario?.maxTurns || MAX_TURNS}</span>
+        <span className={`font-mono text-white ${isCompact ? 'text-xl' : 'text-3xl'}`}>
+          {turn} <span className={`text-slate-600 ${isCompact ? 'text-sm' : 'text-lg'}`}>/ {scenario?.maxTurns || MAX_TURNS}</span>
         </span>
       </div>
 
-      <div className="hidden md:block w-px bg-slate-800"></div>
+      <div className={`w-px bg-slate-800 self-stretch min-h-[2rem] ${isCompact ? '' : 'hidden md:block'}`}></div>
 
-      <div className="flex flex-col items-center px-4">
-        <span className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-2">
+      <div className={`flex flex-col items-center ${isCompact ? 'px-2' : 'px-4'}`}>
+        <span className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-0.5">
           Target Lock
         </span>
         <div className="flex gap-2 mt-1">
@@ -46,13 +56,13 @@ export const GameStatus: React.FC<GameStatusProps> = ({ turn, bTimeInRange, curr
         </div>
       </div>
 
-      <div className="hidden md:block w-px bg-slate-800"></div>
+      <div className={`w-px bg-slate-800 self-stretch min-h-[2rem] ${isCompact ? '' : 'hidden md:block'}`}></div>
 
-      <div className="flex flex-col items-center px-4">
-        <span className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-1">
+      <div className={`flex flex-col items-center ${isCompact ? 'px-2' : 'px-4'}`}>
+        <span className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-0.5">
           Used ΔV
         </span>
-        <div className="flex gap-4">
+        <div className={`flex ${isCompact ? 'gap-2' : 'gap-4'}`}>
           <div className="flex flex-col items-center">
             <span className="text-[10px] text-blue-400">BLUE</span>
             <span className="text-sm font-mono text-blue-200">

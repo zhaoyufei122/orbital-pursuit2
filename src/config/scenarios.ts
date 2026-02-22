@@ -29,6 +29,8 @@ export interface GameScenario {
 
   // 天气与环境
   weatherEnabled: boolean; // 是否启用天气系统
+  /** 观测时间限制：true 时长观测仅夜间可用，DAWN/DUSK 仅短观测，DAY 无法观测 */
+  observationTimeRestriction?: boolean;
 }
 
 export const SCENARIO_CLASSIC: GameScenario = {
@@ -67,7 +69,7 @@ export const SCENARIO_REALISTIC: GameScenario = {
   initialBPos: { x: 2, y: 5 },
   fogOfWar: true,
   weatherEnabled: false,
-  
+  observationTimeRestriction: true, // 长观测仅夜间可用
   aMinX: 5,
   aMaxX: 14,
   winTime: 2,

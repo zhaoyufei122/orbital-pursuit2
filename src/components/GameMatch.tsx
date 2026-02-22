@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { BookOpen, Satellite } from 'lucide-react';
 import { GameBoard } from './GameBoard';
-import { GameStatus } from './GameStatus';
 import { GameControls } from './GameControls';
 import { GameOver } from './GameOver';
+import { RULES_TEXT, BACKGROUND_TEXT } from '../constants';
 import type { GameEngine } from '../hooks/useGameEngine';
 import type { InteractionMode } from '../types';
 
@@ -129,35 +129,36 @@ export const GameMatch: React.FC<GameMatchProps> = ({ engine, onBackToMenu }) =>
         </div>
       </div>
 
-      {/* 主布局：垂直排列，占据剩余空间 */}
-      <main className="flex-1 flex flex-col items-center justify-center gap-4 w-full h-full relative">
-        {/* Debug Info - Temporary */}
-        {/* <div className="absolute top-10 left-4 z-50 bg-black/80 text-green-400 p-2 text-[10px] font-mono whitespace-pre pointer-events-none">
-            DEBUG:
-            Turn: {turn}
-            Phase: {matchPhase}
-            LastScan: {JSON.stringify(lastScan, null, 2)}
-            CurrentPlayer: {currentPlayer}
-            Scenario: {scenario?.id}
-        </div> */}
+      {/* 主布局：左规则 | 中棋盘 | 右背景 */}
+      <main className="flex-1 flex flex-row w-full min-h-0 overflow-hidden">
+        {/* 左侧：游戏规则 */}
+        <aside className="hidden lg:flex w-52 xl:w-60 shrink-0 flex-col border-r border-slate-700/50 bg-slate-900/30 overflow-y-auto">
+          <div className="p-4 sticky top-0 bg-slate-900/95 backdrop-blur-sm border-b border-slate-700/50 z-10">
+            <div className="flex items-center gap-2 mb-2">
+              <BookOpen className="text-cyan-300 shrink-0" size={18} />
+              <h3 className="text-sm font-bold text-white">Game Rules</h3>
+            </div>
+          </div>
+          <div className="p-4 space-y-2 text-slate-300 text-xs leading-5">
+            {RULES_TEXT.map((item, idx) => (
+              <p key={idx}>
+                <span className="text-cyan-300 font-mono mr-1.5">{idx + 1}.</span>
+                {item}
+              </p>
+            ))}
+            <div className="pt-3 mt-3 border-t border-slate-700/50 text-slate-400">
+              <p className="font-semibold text-slate-300 mb-1">Action</p>
+              <p>
+                Orb <span className="font-mono text-slate-200">y</span> → drift <span className="font-mono">dx = y - 2</span>: ←2, ←1, Stay, →1, →2
+              </p>
+            </div>
+          </div>
+        </aside>
 
-        {/* 状态栏放在地图上方 */}
-        <div className="absolute top-0 z-30 pointer-events-none w-full flex justify-center">
-           {/* 使用 scale 缩小状态栏以避免遮挡 */}
-           <div className="scale-90 origin-top">
-             <GameStatus 
-                turn={turn} 
-                bTimeInRange={bTimeInRange} 
-                currentPlayer={currentPlayer} 
-                resources={resources}
-                scenario={scenario}
-             />
-           </div>
-        </div>
-
-        {/* 游戏地图区域 - 占据最大空间 */}
-        <div className="flex-1 w-full flex items-center justify-center overflow-hidden min-h-0">
-          {scenario && (
+        {/* 中央：棋盘 + 控制面板 */}
+        <div className="flex-1 flex flex-col items-center justify-center gap-4 min-w-0 min-h-0">
+          <div className="flex-1 w-full flex items-center justify-center overflow-hidden min-h-0">
+            {scenario && (
             <GameBoard 
               turn={turn} // Pass turn
               aPos={aPos} 
@@ -185,13 +186,13 @@ export const GameMatch: React.FC<GameMatchProps> = ({ engine, onBackToMenu }) =>
               validMoves={isHumanTurn && matchPhase === 'playing' ? getValidMoves(currentPlayer, currentPlayer === 'A' ? aPos.x : bPos.x) : []}
             />
           )}
-        </div>
+          </div>
 
-        {/* 控制面板 - 固定在底部 */}
-        <div className="shrink-0 w-full flex justify-center pb-2 z-30 px-4">
-          {matchPhase === 'playing' ? (
-            scenario && (
-              <GameControls
+          {/* 控制面板 - 固定在底部 */}
+          <div className="shrink-0 w-full flex justify-center pb-2 z-30 px-4">
+            {matchPhase === 'playing' ? (
+              scenario && (
+                <GameControls
                 isHumanTurn={isHumanTurn}
                 currentPlayer={currentPlayer}
                 mode={mode}
@@ -206,6 +207,8 @@ export const GameMatch: React.FC<GameMatchProps> = ({ engine, onBackToMenu }) =>
                 turn={turn}
                 hasPerformedScan={hasPerformedScan}
                 weather={weather}
+                bTimeInRange={bTimeInRange}
+                resources={resources}
               />
             )
           ) : (
@@ -218,7 +221,32 @@ export const GameMatch: React.FC<GameMatchProps> = ({ engine, onBackToMenu }) =>
               onBackToMenu={onBackToMenu}
             />
           )}
+          </div>
         </div>
+
+        {/* 右侧：背景介绍 */}
+        <aside className="hidden lg:flex w-52 xl:w-60 shrink-0 flex-col border-l border-slate-700/50 bg-slate-900/30 overflow-y-auto">
+          <div className="p-4 sticky top-0 bg-slate-900/95 backdrop-blur-sm border-b border-slate-700/50 z-10">
+            <div className="flex items-center gap-2 mb-2">
+              <Satellite className="text-blue-300 shrink-0" size={18} />
+              <h3 className="text-sm font-bold text-white">Background</h3>
+            </div>
+          </div>
+          <div className="p-4 space-y-2 text-slate-300 text-xs leading-5">
+            {BACKGROUND_TEXT.map((item, idx) => (
+              <p key={idx}>
+                <span className="text-blue-300 font-mono mr-1.5">•</span>
+                {item}
+              </p>
+            ))}
+            <div className="pt-3 mt-3 border-t border-slate-700/50 text-slate-400">
+              <p className="text-slate-300 font-semibold mb-1">Why interesting?</p>
+              <p>
+                Involves <span className="text-slate-200">adversarial planning, incomplete information, risk management</span> — ideal for game theory & AI.
+              </p>
+            </div>
+          </div>
+        </aside>
       </main>
     </div>
   );

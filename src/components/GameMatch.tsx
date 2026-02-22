@@ -89,10 +89,10 @@ export const GameMatch: React.FC<GameMatchProps> = ({ engine, onBackToMenu }) =>
 
   const currentModeLabel =
     mode === 'hotseat'
-      ? '热座模式 Hotseat'
+      ? 'Hotseat Mode'
       : mode === 'ai'
-      ? `AI对战 (${humanRole === 'A' ? '你是蓝方逃逸者' : '你是红方追击者'})`
-      : '未选择模式';
+      ? `AI Match (${humanRole === 'A' ? 'You are Blue (Evader)' : 'You are Red (Pursuer)'})`
+      : 'No Mode Selected';
 
   return (
     <div className="min-h-screen bg-[radial-gradient(ellipse_at_bottom,_var(--tw-gradient-stops))] from-blue-950 via-slate-950 to-black text-slate-200 font-sans py-4 overflow-hidden flex flex-col">
@@ -116,7 +116,7 @@ export const GameMatch: React.FC<GameMatchProps> = ({ engine, onBackToMenu }) =>
                   : 'bg-red-950/70 border-red-800 text-red-200'
               }`}
             >
-              你扮演：{humanRole === 'A' ? '蓝方逃逸者' : '红方追击者'}
+              You: {humanRole === 'A' ? 'Blue (Evader)' : 'Red (Pursuer)'}
             </span>
           )}
 
@@ -124,7 +124,7 @@ export const GameMatch: React.FC<GameMatchProps> = ({ engine, onBackToMenu }) =>
             onClick={onBackToMenu}
             className="px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-900/70 hover:bg-slate-800 transition text-xs"
           >
-            返回首页
+            Back to Home
           </button>
         </div>
       </div>

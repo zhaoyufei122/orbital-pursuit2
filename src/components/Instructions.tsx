@@ -17,12 +17,12 @@ export const Instructions: React.FC<InstructionsProps> = ({ onBack }) => {
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-700 bg-slate-900/70 hover:bg-slate-800/80 transition"
           >
             <ArrowLeft size={18} />
-            返回首页
+            Back to Home
           </button>
 
           <div className="text-right">
-            <h2 className="text-2xl md:text-3xl font-bold text-white">说明</h2>
-            <p className="text-slate-400 text-sm">规则 & 背景介绍</p>
+            <h2 className="text-2xl md:text-3xl font-bold text-white">Instructions</h2>
+            <p className="text-slate-400 text-sm">Rules & Background</p>
           </div>
         </div>
 
@@ -34,7 +34,7 @@ export const Instructions: React.FC<InstructionsProps> = ({ onBack }) => {
           >
             <div className="flex items-center gap-3 mb-4">
               <BookOpen className="text-cyan-300" size={22} />
-              <h3 className="text-xl font-bold text-white">游戏规则</h3>
+              <h3 className="text-xl font-bold text-white">Game Rules</h3>
             </div>
 
             <div className="space-y-3 text-slate-300 text-sm leading-7">
@@ -47,11 +47,11 @@ export const Instructions: React.FC<InstructionsProps> = ({ onBack }) => {
             </div>
 
             <div className="mt-5 p-4 rounded-xl border border-slate-800 bg-slate-950/50 text-sm text-slate-400 leading-6">
-              <p className="mb-1 text-slate-300 font-semibold">动作解释</p>
+              <p className="mb-1 text-slate-300 font-semibold">Action Explanation</p>
               <p>
-                选择轨道 <span className="font-mono text-slate-200">Orb y</span> 后，
-                横向位移为 <span className="font-mono text-slate-200">dx = y - 2</span>：
-                即 <span className="font-mono">←2, ←1, Stay, →1, →2</span>。
+                Choosing orbit <span className="font-mono text-slate-200">Orb y</span> results in a lateral drift of <span className="font-mono text-slate-200">dx = y - 2</span>:
+                <br/>
+                i.e., <span className="font-mono">←2, ←1, Stay, →1, →2</span>.
               </p>
             </div>
           </motion.div>
@@ -63,7 +63,7 @@ export const Instructions: React.FC<InstructionsProps> = ({ onBack }) => {
           >
             <div className="flex items-center gap-3 mb-4">
               <Satellite className="text-blue-300" size={22} />
-              <h3 className="text-xl font-bold text-white">游戏背景：卫星追逃问题</h3>
+              <h3 className="text-xl font-bold text-white">Background: Orbital Pursuit-Evasion</h3>
             </div>
 
             <div className="space-y-3 text-slate-300 text-sm leading-7">
@@ -76,10 +76,10 @@ export const Instructions: React.FC<InstructionsProps> = ({ onBack }) => {
             </div>
 
             <div className="mt-5 p-4 rounded-xl border border-slate-800 bg-slate-950/50 text-sm text-slate-400 leading-6">
-              <p className="text-slate-300 font-semibold mb-1">为什么这个题材有意思？</p>
+              <p className="text-slate-300 font-semibold mb-1">Why is this interesting?</p>
               <p>
-                因为它天然包含 <span className="text-slate-200">对抗、信息不完全、风险管理、预测与反预测</span>，
-                很适合做博弈策略和 AI 实验。
+                It naturally involves <span className="text-slate-200">adversarial planning, incomplete information, risk management, and prediction</span>,
+                making it a perfect testbed for game theory and AI experiments.
               </p>
             </div>
           </motion.div>

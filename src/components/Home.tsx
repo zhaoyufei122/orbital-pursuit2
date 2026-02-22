@@ -21,8 +21,8 @@ export const Home: React.FC<HomeProps> = ({ onStartHotseat, onStartAIConfig, onN
   const [customConfig, setCustomConfig] = useState<GameScenario>({
     ...SCENARIO_REALISTIC,
     id: 'custom',
-    name: '自定义模式 (Custom)',
-    description: '玩家自定义规则配置。',
+    name: 'Custom Mode (Sandbox)',
+    description: 'User customized rules configuration.',
   });
 
   const handleCustomStart = (mode: 'hotseat' | 'ai') => {
@@ -43,13 +43,13 @@ export const Home: React.FC<HomeProps> = ({ onStartHotseat, onStartAIConfig, onN
         >
           <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
             <span className="bg-amber-500/20 text-amber-300 p-2 rounded-lg"><Rocket size={20}/></span>
-            自定义规则配置
+            Custom Rules Configuration
           </h2>
           
           <div className="space-y-6 text-sm text-slate-300">
             <div className="grid grid-cols-2 gap-4">
               <label className="flex flex-col gap-2 p-3 border border-slate-700 rounded-lg bg-slate-800/30">
-                <span className="font-bold text-blue-300">战争迷雾 (Fog of War)</span>
+                <span className="font-bold text-blue-300">Fog of War</span>
                 <div className="flex gap-4">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input 
@@ -57,7 +57,7 @@ export const Home: React.FC<HomeProps> = ({ onStartHotseat, onStartAIConfig, onN
                       checked={customConfig.fogOfWar} 
                       onChange={() => setCustomConfig({...customConfig, fogOfWar: true})}
                       className="accent-blue-500"
-                    /> 开启
+                    /> ON
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input 
@@ -65,13 +65,13 @@ export const Home: React.FC<HomeProps> = ({ onStartHotseat, onStartAIConfig, onN
                       checked={!customConfig.fogOfWar} 
                       onChange={() => setCustomConfig({...customConfig, fogOfWar: false})}
                       className="accent-blue-500"
-                    /> 关闭
+                    /> OFF
                   </label>
                 </div>
               </label>
 
               <label className="flex flex-col gap-2 p-3 border border-slate-700 rounded-lg bg-slate-800/30">
-                <span className="font-bold text-amber-300">天气系统 (Weather)</span>
+                <span className="font-bold text-amber-300">Weather System</span>
                 <div className="flex gap-4">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input 
@@ -79,7 +79,7 @@ export const Home: React.FC<HomeProps> = ({ onStartHotseat, onStartAIConfig, onN
                       checked={customConfig.weatherEnabled} 
                       onChange={() => setCustomConfig({...customConfig, weatherEnabled: true})}
                       className="accent-amber-500"
-                    /> 开启
+                    /> ON
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input 
@@ -87,7 +87,7 @@ export const Home: React.FC<HomeProps> = ({ onStartHotseat, onStartAIConfig, onN
                       checked={!customConfig.weatherEnabled} 
                       onChange={() => setCustomConfig({...customConfig, weatherEnabled: false})}
                       className="accent-amber-500"
-                    /> 关闭
+                    /> OFF
                   </label>
                 </div>
               </label>
@@ -95,7 +95,7 @@ export const Home: React.FC<HomeProps> = ({ onStartHotseat, onStartAIConfig, onN
 
             <div className="grid grid-cols-2 gap-4">
                <label className="flex flex-col gap-2">
-                 <span className="font-bold">地图宽度 (Grid Width)</span>
+                 <span className="font-bold">Map Width (Grid Width)</span>
                  <div className="flex items-center gap-2">
                     <input 
                     type="number" min="11" max="51" step="2"
@@ -103,12 +103,12 @@ export const Home: React.FC<HomeProps> = ({ onStartHotseat, onStartAIConfig, onN
                     onChange={(e) => setCustomConfig({...customConfig, gridW: Math.max(11, parseInt(e.target.value) || 11)})}
                     className="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white"
                     />
-                    <span className="text-xs text-slate-500 w-12">格</span>
+                    <span className="text-xs text-slate-500 w-12">cells</span>
                  </div>
                </label>
 
                <label className="flex flex-col gap-2">
-                 <span className="font-bold">地图高度 (Grid Height)</span>
+                 <span className="font-bold">Map Height (Grid Height)</span>
                  <div className="flex items-center gap-2">
                     <input 
                     type="number" min="5" max="31" step="2"
@@ -116,12 +116,12 @@ export const Home: React.FC<HomeProps> = ({ onStartHotseat, onStartAIConfig, onN
                     onChange={(e) => setCustomConfig({...customConfig, gridH: Math.max(5, parseInt(e.target.value) || 5)})}
                     className="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white"
                     />
-                    <span className="text-xs text-slate-500 w-12">格</span>
+                    <span className="text-xs text-slate-500 w-12">cells</span>
                  </div>
                </label>
 
                <label className="flex flex-col gap-2">
-                 <span className="font-bold">水平尺度 (km/Cell X)</span>
+                 <span className="font-bold">H-Scale (km/Cell X)</span>
                  <div className="flex items-center gap-2">
                     <input 
                     type="number" min="1" 
@@ -134,7 +134,7 @@ export const Home: React.FC<HomeProps> = ({ onStartHotseat, onStartAIConfig, onN
                </label>
 
                <label className="flex flex-col gap-2">
-                 <span className="font-bold">垂直尺度 (km/Cell Y)</span>
+                 <span className="font-bold">V-Scale (km/Cell Y)</span>
                  <div className="flex items-center gap-2">
                     <input 
                     type="number" min="1"
@@ -147,7 +147,7 @@ export const Home: React.FC<HomeProps> = ({ onStartHotseat, onStartAIConfig, onN
                </label>
 
                <label className="flex flex-col gap-2">
-                 <span className="font-bold">识别距离 (Capture Range)</span>
+                 <span className="font-bold">Capture Range</span>
                  <div className="flex items-center gap-2">
                     <input 
                     type="number" min="1"
@@ -160,7 +160,7 @@ export const Home: React.FC<HomeProps> = ({ onStartHotseat, onStartAIConfig, onN
                </label>
 
                <label className="flex flex-col gap-2">
-                 <span className="font-bold">发现距离 (Visual Range)</span>
+                 <span className="font-bold">Visual Range</span>
                  <div className="flex items-center gap-2">
                     <input 
                     type="number" min="1"
@@ -173,7 +173,7 @@ export const Home: React.FC<HomeProps> = ({ onStartHotseat, onStartAIConfig, onN
                </label>
 
                <label className="flex flex-col gap-2">
-                 <span className="font-bold">长观测半径 (Long Scan)</span>
+                 <span className="font-bold">Long Scan Radius</span>
                  <div className="flex items-center gap-2">
                     <input 
                     type="number" min="1"
@@ -186,7 +186,7 @@ export const Home: React.FC<HomeProps> = ({ onStartHotseat, onStartAIConfig, onN
                </label>
 
                <label className="flex flex-col gap-2">
-                 <span className="font-bold">胜利所需回合 (Win Time)</span>
+                 <span className="font-bold">Win Time</span>
                  <div className="flex items-center gap-2">
                     <input 
                     type="number" min="1"
@@ -199,7 +199,7 @@ export const Home: React.FC<HomeProps> = ({ onStartHotseat, onStartAIConfig, onN
                </label>
 
                <label className="flex flex-col gap-2">
-                 <span className="font-bold">最大回合 (Max Turns)</span>
+                 <span className="font-bold">Max Turns</span>
                  <div className="flex items-center gap-2">
                     <input 
                     type="number" min="10"
@@ -218,20 +218,20 @@ export const Home: React.FC<HomeProps> = ({ onStartHotseat, onStartAIConfig, onN
               onClick={() => setIsCustomMode(false)}
               className="px-4 py-2 rounded-lg border border-slate-600 hover:bg-slate-800 text-slate-400 transition"
             >
-              取消
+              Cancel
             </button>
             <div className="flex-1"></div>
             <button 
               onClick={() => handleCustomStart('hotseat')}
               className="px-6 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold transition shadow-lg shadow-blue-900/20"
             >
-              开始热座模式
+              Start Hotseat
             </button>
             <button 
               onClick={() => handleCustomStart('ai')}
               className="px-6 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold transition shadow-lg shadow-indigo-900/20"
             >
-              开始 AI 对战
+              Start AI Match
             </button>
           </div>
         </motion.div>
@@ -259,13 +259,13 @@ export const Home: React.FC<HomeProps> = ({ onStartHotseat, onStartAIConfig, onN
             Orbital Pursuit
           </h1>
           <p className="text-slate-400 mt-2 text-sm md:text-base">
-            卫星追逃博弈 · 双盲回合制 · 轨道机动策略游戏
+            Satellite Pursuit-Evasion · Double-Blind Turn-Based · Orbital Maneuver Strategy
           </p>
         </div>
 
         {/* 模式选择 */}
         <div className="relative z-10 mb-8">
-          <h3 className="text-slate-300 text-sm font-semibold mb-3 uppercase tracking-wider text-center">选择战役模式</h3>
+          <h3 className="text-slate-300 text-sm font-semibold mb-3 uppercase tracking-wider text-center">Select Scenario</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {SCENARIOS.map((scenario) => (
               <button
@@ -304,7 +304,7 @@ export const Home: React.FC<HomeProps> = ({ onStartHotseat, onStartAIConfig, onN
                 onClick={() => setIsCustomMode(true)}
                 className="relative p-4 rounded-xl border border-dashed border-slate-600 bg-slate-900/20 hover:bg-slate-800/40 hover:border-slate-500 transition-all text-left flex items-center justify-center gap-2 group"
             >
-                <span className="text-slate-400 font-bold group-hover:text-blue-300 transition-colors">+ 自定义模式 (Sandbox)</span>
+                <span className="text-slate-400 font-bold group-hover:text-blue-300 transition-colors">+ Custom Mode (Sandbox)</span>
             </button>
           </div>
         </div>
@@ -316,10 +316,10 @@ export const Home: React.FC<HomeProps> = ({ onStartHotseat, onStartAIConfig, onN
           >
             <div className="flex items-center gap-3 mb-3">
               <Users className="text-cyan-300" size={22} />
-              <span className="text-white font-bold text-lg">热座模式</span>
+              <span className="text-white font-bold text-lg">Hotseat</span>
             </div>
             <p className="text-slate-400 text-sm leading-relaxed">
-              两名玩家本地轮流操作，保持双盲规划，再同时结算动作。
+              Two players take turns on the same device. Double-blind planning followed by simultaneous resolution.
             </p>
           </button>
 
@@ -329,10 +329,10 @@ export const Home: React.FC<HomeProps> = ({ onStartHotseat, onStartAIConfig, onN
           >
             <div className="flex items-center gap-3 mb-3">
               <Bot className="text-violet-300" size={22} />
-              <span className="text-white font-bold text-lg">AI对战</span>
+              <span className="text-white font-bold text-lg">AI Match</span>
             </div>
             <p className="text-slate-400 text-sm leading-relaxed">
-              选择扮演红方追击者或蓝方逃逸者，与 AI 进行策略对局。
+              Play as either the Pursuer (Red) or Evader (Blue) against an AI opponent.
             </p>
           </button>
 
@@ -342,10 +342,10 @@ export const Home: React.FC<HomeProps> = ({ onStartHotseat, onStartAIConfig, onN
           >
             <div className="flex items-center gap-3 mb-3">
               <BookOpen className="text-amber-300" size={22} />
-              <span className="text-white font-bold text-lg">说明</span>
+              <span className="text-white font-bold text-lg">Instructions</span>
             </div>
             <p className="text-slate-400 text-sm leading-relaxed">
-              查看游戏规则、胜负条件，以及“卫星追逃问题”的背景介绍。
+              View game rules, win conditions, and background on the "Orbital Pursuit-Evasion" problem.
             </p>
           </button>
         </div>

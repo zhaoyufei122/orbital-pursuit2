@@ -23,12 +23,12 @@ export const RoleSelect: React.FC<RoleSelectProps> = ({ onStartAIMatch, onBack }
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-700 bg-slate-900/70 hover:bg-slate-800/80 transition"
           >
             <ArrowLeft size={18} />
-            返回首页
+            Back to Home
           </button>
 
           <div className="text-right">
-            <h2 className="text-2xl font-bold text-white">AI 对战</h2>
-            <p className="text-slate-400 text-sm">请选择你要扮演的阵营</p>
+            <h2 className="text-2xl font-bold text-white">AI Match</h2>
+            <p className="text-slate-400 text-sm">Choose Your Side</p>
           </div>
         </div>
 
@@ -43,18 +43,18 @@ export const RoleSelect: React.FC<RoleSelectProps> = ({ onStartAIMatch, onBack }
                 <Rocket className="text-red-400" size={28} />
               </div>
               <div>
-                <div className="text-white font-bold text-xl">追击者（红方）</div>
-                <div className="text-red-200/80 text-sm">Pursuer</div>
+                <div className="text-white font-bold text-xl">Pursuer (Red)</div>
+                <div className="text-red-200/80 text-sm">Hunter</div>
               </div>
             </div>
 
             <p className="text-slate-300 text-sm leading-6">
-              你的目标是利用 3x3 锁定区追踪并压制蓝方，
-              让其连续 <span className="font-mono text-white">{WIN_TIME}</span> 回合处于锁定范围内。
+              Track and suppress the Evader using your lock zone. 
+              Maintain target lock for <span className="font-mono text-white">{WIN_TIME}</span> cumulative turns to win.
             </p>
 
             <div className="mt-4 text-xs text-red-200/80 font-mono">
-              适合喜欢主动压迫、预测走位的玩家
+              Playstyle: Aggressive, Predictive
             </div>
           </button>
 
@@ -68,18 +68,18 @@ export const RoleSelect: React.FC<RoleSelectProps> = ({ onStartAIMatch, onBack }
                 <Satellite className="text-blue-400" size={28} />
               </div>
               <div>
-                <div className="text-white font-bold text-xl">逃逸者（蓝方）</div>
-                <div className="text-blue-200/80 text-sm">Evader</div>
+                <div className="text-white font-bold text-xl">Evader (Blue)</div>
+                <div className="text-blue-200/80 text-sm">Target</div>
               </div>
             </div>
 
             <p className="text-slate-300 text-sm leading-6">
-              你的目标是在中间受限区域内持续规避红方锁定，
-              成功坚持至 <span className="font-mono text-white">第 {MAX_TURNS} 回合</span> 即可获胜。
+              Evade Red's lock within the constrained zone.
+              Survive until <span className="font-mono text-white">Turn {MAX_TURNS}</span> to win.
             </p>
 
             <div className="mt-4 text-xs text-blue-200/80 font-mono">
-              适合喜欢规避、骗招与空间管理的玩家
+              Playstyle: Evasive, Deceptive, Management
             </div>
           </button>
         </div>

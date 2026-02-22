@@ -57,12 +57,12 @@ export const GameControls: React.FC<GameControlsProps> = ({
           )}
           <div className="text-center">
             <p className="text-white font-semibold">
-              AI 正在为{currentPlayer === 'A' ? '蓝方（逃逸者）' : '红方（追击者）'}规划动作…
+              AI is planning moves for {currentPlayer === 'A' ? 'Blue (Evader)' : 'Red (Pursuer)'}...
             </p>
             <p className="text-slate-400 text-sm mt-1">
               {currentPlayer === 'A'
-                ? 'AI 将先锁定蓝方动作，再轮到你操作红方。'
-                : 'AI 正在基于当前位置进行追击决策。'}
+                ? 'AI will lock Blue\'s move first, then it\'s your turn as Red.'
+                : 'AI is making pursuit decisions based on current position.'}
             </p>
           </div>
         </div>
@@ -124,11 +124,11 @@ export const GameControls: React.FC<GameControlsProps> = ({
           <>
             <Satellite size={24} className="text-blue-400" />
             <h3 className="text-xl font-bold text-blue-400 flex items-center gap-2 flex-wrap justify-center">
-              {mode === 'hotseat' ? 'Evader (Blue) - 规划动作' : '你（蓝方）- 规划动作'}
+              {mode === 'hotseat' ? 'Evader (Blue) - Plan Move' : 'You (Blue) - Plan Move'}
               {mode === 'hotseat' && (
                 <span className="text-sm font-normal text-blue-300/60 ml-1 border border-blue-800/50 bg-blue-950 px-2 py-0.5 rounded-full flex items-center gap-1">
                   <EyeOff size={14} />
-                  红方请回避视线
+                  Red player look away
                 </span>
               )}
             </h3>
@@ -137,11 +137,11 @@ export const GameControls: React.FC<GameControlsProps> = ({
           <>
             <Rocket size={24} className="text-red-400" />
             <h3 className="text-xl font-bold text-red-400 flex items-center gap-2 flex-wrap justify-center">
-              {mode === 'hotseat' ? 'Pursuer (Red) - 规划动作' : '你（红方）- 规划动作'}
+              {mode === 'hotseat' ? 'Pursuer (Red) - Plan Move' : 'You (Red) - Plan Move'}
               {mode === 'hotseat' && (
                 <span className="text-sm font-normal text-red-300/60 ml-1 border border-red-800/50 bg-red-950 px-2 py-0.5 rounded-full flex items-center gap-1">
                   <EyeOff size={14} />
-                  蓝方动作已锁定
+                  Blue move locked
                 </span>
               )}
             </h3>
@@ -164,7 +164,7 @@ export const GameControls: React.FC<GameControlsProps> = ({
                 }`}
             >
                 <Search size={14} />
-                <span>短观测 (Short Scan)</span>
+                <span>Short Scan</span>
             </button>
 
             <div className="relative">
@@ -181,7 +181,7 @@ export const GameControls: React.FC<GameControlsProps> = ({
                 }`}
                 >
                 <Radar size={14} />
-                <span>{interactionMode === 'SCAN_LONG_AIM' ? '点击地图选择中心点...' : '长观测 (Sector Scan)'}</span>
+                <span>{interactionMode === 'SCAN_LONG_AIM' ? 'Click map to select center...' : 'Sector Scan (Long)'}</span>
                 </button>
             </div>
           </div>
@@ -189,7 +189,7 @@ export const GameControls: React.FC<GameControlsProps> = ({
           {/* 显示观测被禁用的原因 (如果有) */}
           {(!shortScanCheck.allowed || !longScanCheck.allowed) && !hasPerformedScan && (
              <div className="text-[10px] text-red-400 bg-red-950/30 px-2 py-1 rounded border border-red-900/50">
-                观测受限: {!shortScanCheck.allowed ? shortScanCheck.reason : longScanCheck.reason}
+                Scan Restricted: {!shortScanCheck.allowed ? shortScanCheck.reason : longScanCheck.reason}
              </div>
           )}
         </div>
@@ -199,8 +199,8 @@ export const GameControls: React.FC<GameControlsProps> = ({
       <div className="w-full flex justify-center px-4 pb-2">
         <div className="text-center text-slate-400 text-sm py-2 px-4 rounded-lg bg-slate-900/30 border border-slate-800/50">
           {interactionMode === 'SCAN_LONG_AIM'
-            ? '请在地图上点击任意位置执行扫描...' 
-            : '点击地图上的高亮位置（幽灵图标）以移动单位。'}
+            ? 'Please click anywhere on the map to scan...' 
+            : 'Click highlighted HUD buttons to move unit.'}
         </div>
       </div>
     </div>

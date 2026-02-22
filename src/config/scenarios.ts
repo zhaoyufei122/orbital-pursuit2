@@ -33,8 +33,8 @@ export interface GameScenario {
 
 export const SCENARIO_CLASSIC: GameScenario = {
   id: 'classic',
-  name: '经典模式 (Standard)',
-  description: '小规模对抗，无战争迷雾。',
+  name: 'Standard Mode (Classic)',
+  description: 'Small scale skirmish, no Fog of War.',
   gridW: 11,
   gridH: 7,
   initialAPos: { x: 5, y: 3 },
@@ -59,8 +59,8 @@ export const SCENARIO_CLASSIC: GameScenario = {
 
 export const SCENARIO_REALISTIC: GameScenario = {
   id: 'realistic',
-  name: '拟真模式 (Realistic)',
-  description: '大型地图 (21x11)，包含战争迷雾与物理距离判定。',
+  name: 'Realistic Mode (Realistic)',
+  description: 'Large map (21x11) with Fog of War and physical distance mechanics.',
   gridW: 21,
   gridH: 11,
   initialAPos: { x: 10, y: 5 },
@@ -86,8 +86,8 @@ export const SCENARIO_REALISTIC: GameScenario = {
 
 export const SCENARIO_HARDCORE: GameScenario = {
   id: 'hardcore',
-  name: '专家模式 (Hardcore)',
-  description: '全真环境：天气系统、观测窗口限制、燃料消耗。',
+  name: 'Hardcore Mode (Expert)',
+  description: 'Full simulation: Weather system, observation windows, fuel consumption.',
   gridW: 21,
   gridH: 11,
   initialAPos: { x: 10, y: 5 },

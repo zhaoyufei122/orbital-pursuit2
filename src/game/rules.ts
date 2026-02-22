@@ -44,18 +44,18 @@ export const isGroundObservationAllowed = (
 
   // 1. 天气检查
   if (weather === 'CLOUDY') {
-    return { allowed: false, reason: '天气多云，地基观测受阻' };
+    return { allowed: false, reason: 'Cloudy weather, ground observation obstructed' };
   }
 
   // 2. 时间检查
   const time = getTimeOfDay(turn);
   
   if (time === 'DAY') {
-    return { allowed: false, reason: '白昼强光，无法成像' };
+    return { allowed: false, reason: 'Daylight glare, imaging impossible' };
   }
 
   if ((time === 'DAWN' || time === 'DUSK') && scanType === 'LONG') {
-    return { allowed: false, reason: '晨昏时段仅支持短观测' };
+    return { allowed: false, reason: 'Short scan only during Dawn/Dusk' };
   }
 
   return { allowed: true };

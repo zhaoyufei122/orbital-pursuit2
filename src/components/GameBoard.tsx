@@ -22,6 +22,13 @@ interface GameBoardProps {
     detectedPos: Pos | null;
     scannedArea?: { center: Pos; radius: number };
   } | null;
+  previousScanResult: {
+    turn: number;
+    scanType?: 'SHORT' | 'LONG';
+    detectedColumn: number | null;
+    detectedPos: Pos | null;
+    scannedArea?: { center: Pos; radius: number };
+  } | null;
   onCellClick?: (x: number, y: number) => void;
   isScanning?: boolean;
   validMoves?: { x: number; y: number }[];
@@ -36,6 +43,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   currentPlayer,
   isHumanTurn,
   scanResult,
+  previousScanResult,
   onCellClick,
   isScanning,
   validMoves,
@@ -237,36 +245,36 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             const isAArea = x >= scenario.aMinX && x <= scenario.aMaxX;
             const isTargetLock = chebyshevDist({ x, y }, bPos) <= 1; // 仅作为锁定动画参考
             
-            const isScannedColumn = scanResult?.detectedColumn === x;
-            
-            // Check if cell is within Long Scan Rect
-            let inScannedArea = false;
-            let radius = 0;
-            if (scanResult?.scanType === 'LONG' && scanResult.scannedArea) {
-                radius = scanResult.scannedArea.radius;
-                const { center } = scanResult.scannedArea;
-                const distKm = getPhysicalDistance({ x, y }, center, scenario);
-                inScannedArea = distKm <= radius;
-            }
+            // -------------------------------------------------------------------------
+            // 扫描结果显示逻辑 (当前回合 + 上一回合)
+            // -------------------------------------------------------------------------
 
-            const isScanFresh = scanResult?.turn === turn;
-            // 调整历史数据样式：不再过度变暗，而是稍微降低饱和度和亮度，保持可读性
-            const opacityClass = isScanFresh ? 'opacity-100 z-10' : 'opacity-60 brightness-75 grayscale-[30%] z-0';
-            
-            // OLD GHOST UNIT LOGIC REMOVED
-            // const isValidMoveTarget = !isScanning && validMoves?.some(m => m.x === x && m.y === y);
-            // Instead, we only highlight the CURRENT position if it's a hold
-            const isCurrentPos = (currentPlayer === 'A' && aPos.x === x && aPos.y === y) || (currentPlayer === 'B' && bPos.x === x && bPos.y === y);
+            // 辅助函数：判断格子是否在扫描结果中
+            const checkScanCoverage = (result: typeof scanResult, checkX: number, checkY: number) => {
+              if (!result) return { isScannedColumn: false, inScannedArea: false, isTargetPos: false };
 
-            // Determine if any scan overlay should be rendered
-            // 使用物理距离计算是否在扫描范围内
-            // 上面已经计算了 inScannedArea
+              const isScannedColumn = result.detectedColumn === checkX;
+              const isTargetPos = result.detectedPos?.x === checkX && result.detectedPos?.y === checkY;
+              
+              let inScannedArea = false;
+              if (result.scanType === 'LONG' && result.scannedArea) {
+                  const { center, radius } = result.scannedArea;
+                  const distKm = getPhysicalDistance({ x: checkX, y: checkY }, center, scenario);
+                  inScannedArea = distKm <= radius;
+              }
 
-            // 强制显示：如果当前格子是 detectedPos，无论其他条件如何，都视为 isTargetPos
-            // 确保 detectedPos 对象的坐标与当前 x,y 匹配
-            const isTargetPos = scanResult?.detectedPos?.x === x && scanResult?.detectedPos?.y === y;
+              return { isScannedColumn, inScannedArea, isTargetPos };
+            };
 
-            const showScanOverlay = isScannedColumn || isTargetPos || (inScannedArea && !scanResult?.detectedPos) || (inScannedArea && scanResult?.detectedPos && !isTargetPos);
+            const currentScan = checkScanCoverage(scanResult, x, y);
+            const prevScan = checkScanCoverage(previousScanResult, x, y);
+
+            const showCurrentScanOverlay = currentScan.isScannedColumn || currentScan.isTargetPos || (currentScan.inScannedArea && !scanResult?.detectedPos) || (currentScan.inScannedArea && scanResult?.detectedPos && !currentScan.isTargetPos);
+            const showPrevScanOverlay = prevScan.isScannedColumn || prevScan.isTargetPos || (prevScan.inScannedArea && !previousScanResult?.detectedPos) || (prevScan.inScannedArea && previousScanResult?.detectedPos && !prevScan.isTargetPos);
+
+            // 检查当前显示的 lastScan 是否是本回合的新鲜数据
+            const isCurrentScanFresh = scanResult?.turn === turn;
+            const currentOpacityClass = isCurrentScanFresh ? 'opacity-100 z-10' : 'opacity-60 brightness-75 grayscale-[30%] z-0';
 
             // 2. 导引区域 (Visual Guidance Area, 100km)
             const distKmB = getPhysicalDistance({ x, y }, bPos, scenario);
@@ -305,13 +313,23 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                 `}
                 style={{ left: pos.x, top: pos.y }}
               >
-                 {/* 观测结果背景层 - 独立出来，避免影响移动图标，但要通过 opacityClass 控制其视觉衰减 */}
-                 {showScanOverlay && (
-                    <div className={`absolute inset-0 pointer-events-none rounded-sm transition-all duration-300 ${opacityClass}
-                      ${isScannedColumn ? 'bg-amber-500/20 border border-amber-500/40 shadow-[0_0_10px_rgba(245,158,11,0.2)]' : ''}
-                      ${isTargetPos ? 'bg-red-500/40 border border-red-500/80 shadow-[0_0_15px_rgba(239,68,68,0.4)]' : ''}
-                      ${inScannedArea && !scanResult?.detectedPos ? 'bg-slate-700/30 border border-slate-600/40 border-dashed' : ''}
-                      ${inScannedArea && scanResult?.detectedPos && !isTargetPos ? 'bg-red-900/10 border border-red-900/20' : ''}
+                 {/* 观测结果背景层 (当前回合) - 优先级高 */}
+                 {showCurrentScanOverlay && (
+                    <div className={`absolute inset-0 pointer-events-none rounded-sm transition-all duration-300 ${currentOpacityClass}
+                      ${currentScan.isScannedColumn ? 'bg-amber-500/20 border border-amber-500/40 shadow-[0_0_10px_rgba(245,158,11,0.2)]' : ''}
+                      ${currentScan.isTargetPos ? 'bg-red-500/40 border border-red-500/80 shadow-[0_0_15px_rgba(239,68,68,0.4)]' : ''}
+                      ${currentScan.inScannedArea && !scanResult?.detectedPos ? 'bg-slate-700/30 border border-slate-600/40 border-dashed' : ''}
+                      ${currentScan.inScannedArea && scanResult?.detectedPos && !currentScan.isTargetPos ? 'bg-red-900/10 border border-red-900/20' : ''}
+                    `} />
+                 )}
+
+                 {/* 观测结果背景层 (上一回合) - 优先级低，如果当前回合未覆盖此格才显示 */}
+                 {showPrevScanOverlay && !showCurrentScanOverlay && (
+                    <div className={`absolute inset-0 pointer-events-none rounded-sm transition-all duration-300 opacity-60 brightness-75 grayscale-[30%] z-0
+                      ${prevScan.isScannedColumn ? 'bg-amber-500/20 border border-amber-500/40 shadow-[0_0_10px_rgba(245,158,11,0.2)]' : ''}
+                      ${prevScan.isTargetPos ? 'bg-red-500/40 border border-red-500/80 shadow-[0_0_15px_rgba(239,68,68,0.4)]' : ''}
+                      ${prevScan.inScannedArea && !previousScanResult?.detectedPos ? 'bg-slate-700/30 border border-slate-600/40 border-dashed' : ''}
+                      ${prevScan.inScannedArea && previousScanResult?.detectedPos && !prevScan.isTargetPos ? 'bg-red-900/10 border border-red-900/20' : ''}
                     `} />
                  )}
 

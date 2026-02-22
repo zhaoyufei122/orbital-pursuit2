@@ -23,6 +23,7 @@ export const initialState: GameState = {
     B: { ...INITIAL_RESOURCES },
   },
   lastScan: { A: null, B: null },
+  previousScan: { A: null, B: null },
   hasPerformedScan: false,
   weather: 'CLEAR', // 默认为晴朗
 };
@@ -60,6 +61,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           B: { ...INITIAL_RESOURCES },
         },
         lastScan: { A: null, B: null },
+        previousScan: { A: null, B: null },
         hasPerformedScan: false,
       };
     }
@@ -79,6 +81,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           B: { ...INITIAL_RESOURCES },
         },
         lastScan: { A: null, B: null },
+        previousScan: { A: null, B: null },
         hasPerformedScan: false,
       };
     }
@@ -97,6 +100,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           B: { ...INITIAL_RESOURCES },
         },
         lastScan: { A: null, B: null },
+        previousScan: { A: null, B: null },
         hasPerformedScan: false,
       };
     }
@@ -127,6 +131,23 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         detectedPos: null,
       };
 
+      // 记录本次扫描为 current
+      // 之前的 lastScan 应该在回合开始时被移入 previousScan
+      // 实际上，我们应该保留 lastScan 作为“最近一次扫描”，
+      // 但现在用户想同时显示。所以当玩家执行新的扫描时：
+      // lastScan(Turn N-1) -> previousScan
+      // Result(Turn N) -> lastScan
+
+      // 但如果玩家这回合还没扫描，显示什么？
+      // 应该显示 Turn N-1 的扫描结果（作为 lastScan），
+      // 和 Turn N-2 的扫描结果（作为 previousScan）？
+      // 或者：Turn N 未扫描时，显示 Turn N-1 (lastScan) 和 N-2 (previousScan)。
+      // Turn N 扫描后，显示 Turn N (lastScan) 和 Turn N-1 (previousScan)。
+      
+      // 所以我们只需要在 SCAN_SHORT / SCAN_LONG reducer 里把旧值移过去。
+
+      const prevScan = state.lastScan[currentPlayer];
+
       return {
         ...state,
         hasPerformedScan: true,
@@ -134,6 +155,10 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           ...state.lastScan,
           [currentPlayer]: result,
         },
+        previousScan: {
+            ...state.previousScan,
+            [currentPlayer]: prevScan
+        }
       };
     }
 
@@ -171,14 +196,21 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
                 scannedArea: { center, radius: scenario.ranges.longScan || 175 },
             };
 
-            return {
-                ...state,
-                hasPerformedScan: true,
-                lastScan: {
-                  ...state.lastScan,
-                  [currentPlayer]: result,
-                },
-            };
+      // 长观测
+      const prevScanLong = state.lastScan[currentPlayer];
+
+      return {
+        ...state,
+        hasPerformedScan: true,
+        lastScan: {
+          ...state.lastScan,
+          [currentPlayer]: result,
+        },
+        previousScan: {
+          ...state.previousScan,
+          [currentPlayer]: prevScanLong
+        }
+      };
     }
 
     case 'PLAYER_MOVE': {
@@ -201,6 +233,24 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         
         // 蓝方移动后不更新回合数，也不更新天气（只有在回合数变更时才更新天气）
         // 等待红方移动
+        // 同时保存当前扫描结果到上一回合（为了在移动阶段结束时，B 回合开始前，把 A 的扫描结果归档？）
+        // 不对，previousScan 是 "该玩家的上一次扫描结果"，还是 "整个游戏上一回合的扫描结果"？
+        // 用户需求：希望同时显示上一回合的观测结果。
+        // 这通常意味着：当前是 Turn N，我进行了观测，显示 Turn N 的结果。同时我也想看到 Turn N-1 我进行的观测结果。
+        // 所以我们需要为每个玩家维护 lastScan (Turn N) 和 previousScan (Turn N-1)。
+        
+        // 在玩家行动开始时（轮到该玩家），如果是新回合（Turn N），lastScan 应该被移动到 previousScan，并清空 lastScan？
+        // 或者，lastScan 始终是“最近一次”，previousScan 是“再上一次”。
+        // 当玩家执行 SCAN 动作时，旧的 lastScan 变为 previousScan，新的结果写入 lastScan。
+        // 但每个玩家每回合只能扫描一次。所以：
+        // Turn N-1: 扫描 -> lastScan = Result(N-1), previousScan = Result(N-2)
+        // Turn N 开始: lastScan 依然是 Result(N-1)
+        // Turn N 扫描: lastScan 变为 Result(N), previousScan 变为 Result(N-1)
+        // 这样就对了。
+
+        // 但目前代码里 lastScan 是按玩家分开存储的：lastScan: { A: ..., B: ... }
+        // 所以我们只需要在 SCAN_SHORT / SCAN_LONG reducer 里更新即可。
+
         return {
           ...state,
           pendingAMove: nextA,

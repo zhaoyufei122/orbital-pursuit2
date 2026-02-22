@@ -35,6 +35,7 @@ export const GameMatch: React.FC<GameMatchProps> = ({ engine, onBackToMenu }) =>
     resources,
     // scanResult, // Removed
     lastScan,      // Added
+    previousScan,  // Added
     hasPerformedScan, // Added
     weather,
   } = engine;
@@ -170,6 +171,13 @@ export const GameMatch: React.FC<GameMatchProps> = ({ engine, onBackToMenu }) =>
                   ? lastScan[currentPlayer] // 热座模式：显示当前行动玩家的信息
                   : humanRole 
                     ? lastScan[humanRole]   // AI 模式：显示人类玩家的信息
+                    : null
+              ) : null}
+              previousScanResult={previousScan ? (
+                mode === 'hotseat'
+                  ? previousScan[currentPlayer]
+                  : humanRole
+                    ? previousScan[humanRole]
                     : null
               ) : null}
               onCellClick={handleCellClick}

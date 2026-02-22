@@ -33,6 +33,13 @@ export interface GameEngine {
     detectedPos: Pos | null;
     scannedArea?: { center: Pos; radius: number };
   } | null>;
+  previousScan: Record<Player, {
+    turn: number;
+    scanType?: 'SHORT' | 'LONG';
+    detectedColumn: number | null;
+    detectedPos: Pos | null;
+    scannedArea?: { center: Pos; radius: number };
+  } | null>;
   hasPerformedScan: boolean;
   weather: Weather;
 }
@@ -55,6 +62,7 @@ export const useGameEngine = (): GameEngine => {
     resources,
     // scanResult, // Removed
     lastScan,      // Added
+    previousScan,  // Added
     hasPerformedScan, // Added
     weather,       // Added
   } = state;
@@ -162,6 +170,7 @@ export const useGameEngine = (): GameEngine => {
     handleLongScan,
     resources,
     lastScan,
+    previousScan,
     hasPerformedScan,
     weather,
   };

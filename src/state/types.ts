@@ -51,6 +51,15 @@ export interface GameState {
     detectedPos: Pos | null;
     scannedArea?: { center: Pos; radius: number }; // 记录长观测的区域 (圆形)
   } | null>;
+
+  // 新增：每个玩家上一回合的侦察结果
+  previousScan: Record<Player, {
+    turn: number;
+    scanType: 'SHORT' | 'LONG';
+    detectedColumn: number | null;
+    detectedPos: Pos | null;
+    scannedArea?: { center: Pos; radius: number };
+  } | null>;
   
   // 新增：当前回合当前玩家是否已执行侦察
   hasPerformedScan: boolean;

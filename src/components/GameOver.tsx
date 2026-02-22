@@ -47,13 +47,13 @@ export const GameOver: React.FC<GameOverProps> = ({
           winner === 'B' ? 'text-red-400' : 'text-blue-400'
         }`}
       >
-        {winner === 'B' ? 'TARGET LOCKED (红方获胜)' : 'EVADER ESCAPED (蓝方获胜)'}
+        {winner === 'B' ? 'TARGET LOCKED (Pursuer Wins)' : 'EVADER ESCAPED (Evader Wins)'}
       </h2>
 
       <p className="text-slate-400 text-sm">
         {winner === 'B'
-          ? '红方成功完成连续锁定。'
-          : `蓝方成功存活至第 ${MAX_TURNS} 回合。`}
+          ? 'Pursuer successfully maintained target lock.'
+          : `Evader survived until Turn ${MAX_TURNS}.`}
       </p>
 
       <div className="mt-6 flex flex-col sm:flex-row justify-center gap-3">
@@ -67,14 +67,14 @@ export const GameOver: React.FC<GameOverProps> = ({
           }}
           className="px-6 py-3 bg-white text-slate-900 font-bold rounded-xl hover:bg-blue-100 transition-all active:scale-95"
         >
-          再来一局
+          Play Again
         </button>
 
         <button
           onClick={onBackToMenu}
           className="px-6 py-3 border border-slate-700 bg-slate-900/70 text-white font-semibold rounded-xl hover:bg-slate-800 transition-all"
         >
-          返回首页
+          Back to Home
         </button>
       </div>
     </motion.div>

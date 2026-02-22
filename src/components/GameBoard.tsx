@@ -5,6 +5,7 @@ import { posOf, chebyshevDist } from '../utils';
 import type { Pos, MatchPhase, Player } from '../types';
 import type { GameScenario } from '../config/scenarios';
 import { isWithinVisualRange } from '../game/rules';
+import { getPhysicalDistance } from '../game/physics';
 
 interface GameBoardProps {
   turn: number;
@@ -148,12 +149,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             if (scanResult?.scanType === 'LONG' && scanResult.scannedArea) {
                 radius = scanResult.scannedArea.radius;
                 const { center } = scanResult.scannedArea;
-                const dx = Math.abs(x - center.x);
-                const dy = Math.abs(y - center.y);
-                const distKm = Math.sqrt(
-                  Math.pow(dx * (scenario.kmPerCellX || 35), 2) + 
-                  Math.pow(dy * (scenario.kmPerCellY || 15), 2)
-                );
+                const distKm = getPhysicalDistance({ x, y }, center, scenario);
                 inScannedArea = distKm <= radius;
             }
 
@@ -175,12 +171,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             const showScanOverlay = isScannedColumn || isTargetPos || (inScannedArea && !scanResult?.detectedPos) || (inScannedArea && scanResult?.detectedPos && !isTargetPos);
 
             // 2. 导引区域 (Visual Guidance Area, 100km)
-            const dxB = Math.abs(x - bPos.x);
-            const dyB = Math.abs(y - bPos.y);
-            const distKmB = Math.sqrt(
-                Math.pow(dxB * (scenario.kmPerCellX || 35), 2) + 
-                Math.pow(dyB * (scenario.kmPerCellY || 15), 2)
-            );
+            const distKmB = getPhysicalDistance({ x, y }, bPos, scenario);
             
             // 判定是否在区域内
             const isIdentZone = distKmB <= (scenario.ranges?.identification || 50);

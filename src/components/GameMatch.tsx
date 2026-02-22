@@ -5,6 +5,7 @@ import { GameStatus } from './GameStatus';
 import { GameControls } from './GameControls';
 import { GameOver } from './GameOver';
 import type { GameEngine } from '../hooks/useGameEngine';
+import type { InteractionMode } from '../types';
 
 interface GameMatchProps {
   engine: GameEngine;
@@ -37,21 +38,22 @@ export const GameMatch: React.FC<GameMatchProps> = ({ engine, onBackToMenu }) =>
     hasPerformedScan, // Added
   } = engine;
 
-  const [isScanning, setIsScanning] = useState(false);
+  const [interactionMode, setInteractionMode] = useState<InteractionMode>('IDLE');
 
   const handleToggleScanMode = () => {
     // 如果已经执行过侦察，不响应长观测按钮
     if (hasPerformedScan) return;
-    setIsScanning(!isScanning);
+    
+    setInteractionMode(prev => prev === 'SCAN_LONG_AIM' ? 'IDLE' : 'SCAN_LONG_AIM');
   };
 
   const handleShortScanWrapper = () => {
     // 如果已经执行过侦察，不执行短观测
     if (hasPerformedScan) return;
     
-    // 如果当前正处于长观测选择模式（isScanning=true），先取消该模式，再执行短观测
-    if (isScanning) {
-      setIsScanning(false);
+    // 如果当前正处于长观测选择模式，先取消该模式，再执行短观测
+    if (interactionMode === 'SCAN_LONG_AIM') {
+      setInteractionMode('IDLE');
     }
     
     handleShortScan();
@@ -61,22 +63,24 @@ export const GameMatch: React.FC<GameMatchProps> = ({ engine, onBackToMenu }) =>
     if (!scenario) return;
 
     // 如果在长观测模式下，但本回合已经执行过侦察（理论上按钮已禁用，这里做双重保险），则退出扫描模式
-    if (isScanning && hasPerformedScan) {
-        setIsScanning(false);
+    if (interactionMode === 'SCAN_LONG_AIM' && hasPerformedScan) {
+        setInteractionMode('IDLE');
         return;
     }
 
-    if (isScanning) {
+    if (interactionMode === 'SCAN_LONG_AIM') {
       // 侦察模式逻辑：以点击点为圆心
       handleLongScan({ x, y });
-      setIsScanning(false);
-    } else if (matchPhase === 'playing' && isHumanTurn) {
-      // 移动模式逻辑
-      const validMoves = getValidMoves(currentPlayer, currentPlayer === 'A' ? aPos.x : bPos.x);
-      const targetMove = validMoves.find(m => m.x === x && m.y === y);
-      
-      if (targetMove) {
-        handlePlayerMove(targetMove.y);
+      setInteractionMode('IDLE');
+    } else {
+      // 移动模式逻辑 (IDLE/MOVING)
+      if (matchPhase === 'playing' && isHumanTurn) {
+        const validMoves = getValidMoves(currentPlayer, currentPlayer === 'A' ? aPos.x : bPos.x);
+        const targetMove = validMoves.find(m => m.x === x && m.y === y);
+        
+        if (targetMove) {
+          handlePlayerMove(targetMove.y);
+        }
       }
     }
   };
@@ -162,7 +166,7 @@ export const GameMatch: React.FC<GameMatchProps> = ({ engine, onBackToMenu }) =>
                     : null
               ) : null}
               onCellClick={handleCellClick}
-              isScanning={isScanning}
+              isScanning={interactionMode === 'SCAN_LONG_AIM'}
               validMoves={isHumanTurn && matchPhase === 'playing' ? getValidMoves(currentPlayer, currentPlayer === 'A' ? aPos.x : bPos.x) : []}
             />
           )}
@@ -183,7 +187,7 @@ export const GameMatch: React.FC<GameMatchProps> = ({ engine, onBackToMenu }) =>
                 onPlayerMove={handlePlayerMove}
                 onShortScan={handleShortScanWrapper}
                 onToggleScanMode={handleToggleScanMode}
-                isScanning={isScanning}
+                interactionMode={interactionMode}
                 turn={turn}
                 hasPerformedScan={hasPerformedScan}
               />

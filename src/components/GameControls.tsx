@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Satellite, Rocket, EyeOff, Search, Radar, Sun, Moon } from 'lucide-react';
 import { motion } from 'motion/react';
-import type { Player, Mode, Pos } from '../types';
+import type { Player, Mode, Pos, InteractionMode } from '../types';
 import type { GameScenario } from '../config/scenarios';
 
 interface GameControlsProps {
@@ -15,9 +15,9 @@ interface GameControlsProps {
   onPlayerMove: (selectedY: number) => void;
   onShortScan: () => void;
   onToggleScanMode: () => void;
-  isScanning: boolean;
-  turn: number; // Added turn prop
-  hasPerformedScan: boolean; // Added
+  interactionMode: InteractionMode;
+  turn: number;
+  hasPerformedScan: boolean;
 }
 
 export const GameControls: React.FC<GameControlsProps> = ({
@@ -31,7 +31,7 @@ export const GameControls: React.FC<GameControlsProps> = ({
   onPlayerMove,
   onShortScan,
   onToggleScanMode,
-  isScanning,
+  interactionMode,
   turn,
   hasPerformedScan,
 }) => {
@@ -163,13 +163,13 @@ export const GameControls: React.FC<GameControlsProps> = ({
               className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-colors text-xs font-bold ${
                 !canScan
                   ? 'bg-slate-800/50 border-slate-700/50 text-slate-500 cursor-not-allowed'
-                  : isScanning 
+                  : interactionMode === 'SCAN_LONG_AIM'
                     ? 'bg-amber-500/20 border-amber-500 text-amber-300 animate-pulse' 
                     : 'bg-slate-800 hover:bg-slate-700 border-slate-600 text-slate-300'
               }`}
             >
               <Radar size={14} />
-              <span>{isScanning ? '点击地图选择中心点...' : '长观测 (Sector Scan)'}</span>
+              <span>{interactionMode === 'SCAN_LONG_AIM' ? '点击地图选择中心点...' : '长观测 (Sector Scan)'}</span>
             </button>
           </div>
         </div>
@@ -178,7 +178,7 @@ export const GameControls: React.FC<GameControlsProps> = ({
       {/* 底部提示信息 (原按钮区域) */}
       <div className="w-full flex justify-center px-4 pb-2">
         <div className="text-center text-slate-400 text-sm py-2 px-4 rounded-lg bg-slate-900/30 border border-slate-800/50">
-          {isScanning 
+          {interactionMode === 'SCAN_LONG_AIM'
             ? '请在地图上点击任意位置执行扫描...' 
             : '点击地图上的高亮位置（幽灵图标）以移动单位。'}
         </div>

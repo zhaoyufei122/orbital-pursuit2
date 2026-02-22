@@ -184,7 +184,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
               <div
                 key={`cell-${x}-${y}`}
                 onClick={() => onCellClick?.(x, y)}
-                className={`absolute w-[40px] h-[40px] rounded-sm transition-all duration-300 backdrop-blur-sm z-10
+                className={`absolute w-[40px] h-[40px] rounded-sm transition-all duration-300 backdrop-blur-sm z-10 group
                   ${
                     isAArea
                       ? 'bg-blue-500/5 border border-blue-400/10'
@@ -193,8 +193,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                   ${showZoneHighlight && isIdentZone ? 'bg-red-500/20 border border-red-500/40' : ''}
                   ${showZoneHighlight && isVisualZone && !isIdentZone ? 'bg-red-500/5 border border-dashed border-red-500/20' : ''}
                   ${isScanning ? 'cursor-crosshair hover:bg-amber-500/30 hover:border-amber-400' : ''}
-                  ${isValidMoveTarget && !isCurrentPos ? 'cursor-pointer z-30 border-2 border-emerald-400/80 bg-emerald-500/40 hover:bg-emerald-500/60 hover:scale-105 shadow-[0_0_15px_rgba(52,211,153,0.6)]' : ''}
-                  ${isValidMoveTarget && isCurrentPos ? 'cursor-pointer z-30 border-2 border-white/70 bg-white/20 hover:bg-white/30' : ''}
+                  ${isValidMoveTarget ? 'cursor-pointer z-30 hover:scale-105' : ''}
                 `}
                 style={{ left: pos.x, top: pos.y }}
               >
@@ -205,6 +204,14 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                       ${isTargetPos ? 'bg-red-500/40 border border-red-500/80 shadow-[0_0_15px_rgba(239,68,68,0.4)]' : ''}
                       ${inScannedArea && !scanResult?.detectedPos ? 'bg-slate-700/30 border border-slate-600/40 border-dashed' : ''}
                       ${inScannedArea && scanResult?.detectedPos && !isTargetPos ? 'bg-red-900/10 border border-red-900/20' : ''}
+                    `} />
+                 )}
+
+                 {/* 可行移动高亮覆盖层 - 确保在观测层之上 */}
+                 {isValidMoveTarget && (
+                    <div className={`absolute inset-0 pointer-events-none rounded-sm z-20 border-2 border-emerald-400/80 shadow-[0_0_15px_rgba(52,211,153,0.6)] transition-all duration-300
+                        ${isCurrentPos ? 'bg-emerald-500/20' : 'bg-emerald-500/40'}
+                        group-hover:bg-emerald-500/60
                     `} />
                  )}
 

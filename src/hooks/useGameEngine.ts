@@ -23,7 +23,7 @@ export interface GameEngine {
   startAIMatch: (role: Player, scenario: GameScenario) => void;
   handlePlayerMove: (selectedY: number) => void;
   handleShortScan: () => void;
-  handleLongScan: (targetRect: { minX: number; maxX: number; minY: number; maxY: number }) => void;
+  handleLongScan: (center: { x: number; y: number }) => void;
   getValidMoves: (player: Player, fromX: number) => { x: number; y: number }[]; // Added
   resources: Record<Player, Resources>;
   lastScan: Record<Player, {
@@ -31,7 +31,7 @@ export interface GameEngine {
     scanType?: 'SHORT' | 'LONG';
     detectedColumn: number | null;
     detectedPos: Pos | null;
-    scannedRect?: { minX: number; maxX: number; minY: number; maxY: number };
+    scannedArea?: { center: Pos; radius: number };
   } | null>;
   hasPerformedScan: boolean;
 }
@@ -104,8 +104,8 @@ export const useGameEngine = (): GameEngine => {
     dispatch({ type: 'SCAN_SHORT' });
   }, []);
 
-  const handleLongScan = useCallback((targetRect: { minX: number; maxX: number; minY: number; maxY: number }) => {
-    dispatch({ type: 'SCAN_LONG', payload: { targetRect } });
+  const handleLongScan = useCallback((center: { x: number; y: number }) => {
+    dispatch({ type: 'SCAN_LONG', payload: { center } });
   }, []);
 
   // --- AI 自动行动 ---

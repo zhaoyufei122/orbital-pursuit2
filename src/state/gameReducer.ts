@@ -2,7 +2,7 @@ import type { GameState } from './types';
 import type { GameAction } from './actions';
 import { SCENARIO_CLASSIC } from '../config/scenarios';
 import { chebyshevDist } from '../utils';
-import { isValidMove, calcNextPos, checkWinCondition } from '../game/rules';
+import { isValidMove, calcNextPos, checkWinCondition, isWithinCaptureRange, isLongScanCovered, isWithinVisualRange } from '../game/rules'; // Added isWithinVisualRange
 import { INITIAL_RESOURCES } from './types';
 import type { Player, Pos } from '../types';
 
@@ -114,34 +114,36 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (!scenario) return state;
       if (hasPerformedScan) return state; // 本回合已观测过
 
-      const { targetRect } = action.payload;
+      const { center } = action.payload; // 改为 center
 
       const opponent = currentPlayer === 'A' ? 'B' : 'A';
       const opponentPos = opponent === 'A' ? aPos : bPos;
 
-      // 检查是否在区域内
-      const inRect = 
-        opponentPos.x >= targetRect.minX && 
-        opponentPos.x <= targetRect.maxX &&
-        opponentPos.y >= targetRect.minY && 
-        opponentPos.y <= targetRect.maxY;
+            // 检查是否在目视范围内 (仅作逻辑判断，暂不作为命中依据)
+            const inVisual = isWithinVisualRange(opponentPos, center, scenario);
 
-      const result = {
-        turn: state.turn,
-        scanType: 'LONG' as const,
-        detectedColumn: null,
-        detectedPos: inRect ? opponentPos : null,
-        scannedRect: targetRect,
-      };
+            // 使用物理距离判定命中
+            const isHit = isLongScanCovered(center, opponentPos, scenario);
 
-      return {
-        ...state,
-        hasPerformedScan: true,
-        lastScan: {
-          ...state.lastScan,
-          [currentPlayer]: result,
-        },
-      };
+            // 如果命中，detectedPos 为对方位置；否则为 null
+            const detectedPos = isHit ? opponentPos : null;
+
+            const result = {
+                turn: state.turn,
+                scanType: 'LONG' as const,
+                detectedColumn: null,
+                detectedPos: detectedPos,
+                scannedArea: { center, radius: scenario.ranges.longScan || 175 },
+            };
+
+            return {
+                ...state,
+                hasPerformedScan: true,
+                lastScan: {
+                  ...state.lastScan,
+                  [currentPlayer]: result,
+                },
+            };
     }
 
     case 'PLAYER_MOVE': {
@@ -169,8 +171,9 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         const nextB = calcNextPos(bPos, selectedY, scenario);
         const finalA = pendingAMove || aPos;
         
-        const dist = chebyshevDist(finalA, nextB);
-        const newTimeInRange = dist <= 1 ? bTimeInRange + 1 : 0;
+        // 使用物理距离判定胜利条件
+        const inRange = isWithinCaptureRange(finalA, nextB, scenario);
+        const newTimeInRange = inRange ? bTimeInRange + 1 : 0;
         
         const { nextPhase, nextWinner } = checkWinCondition(newTimeInRange, turn + 1, scenario);
 

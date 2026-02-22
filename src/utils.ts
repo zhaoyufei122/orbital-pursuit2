@@ -48,8 +48,26 @@ export const getCurvedPos = (x: number, y: number) => {
   };
 };
 
+// 计算椭圆判定：点 (x, y) 是否在以 (cx, cy) 为中心，半径为 (rx, ry) 的椭圆内
+export const isPointInEllipse = (x: number, y: number, cx: number, cy: number, rx: number, ry: number) => {
+  if (rx <= 0 || ry <= 0) return false;
+  const normalizedDistSq = Math.pow((x - cx) / rx, 2) + Math.pow((y - cy) / ry, 2);
+  return normalizedDistSq <= 1;
+};
+
+// 计算切比雪夫距离 (Chebyshev distance)
 export const chebyshevDist = (p1: Pos, p2: Pos) =>
   Math.max(Math.abs(p1.x - p2.x), Math.abs(p1.y - p2.y));
+
+// 计算椭圆加权距离 (Physical Distance Proxy)
+// 返回值不是真实公里数，而是归一化的“椭圆半径单位”
+// 判定条件：dist <= 1.0 表示在椭圆内
+export const getEllipticalDistance = (p1: Pos, p2: Pos, rx: number, ry: number) => {
+    if (rx <= 0 || ry <= 0) return Infinity;
+    const dx = Math.abs(p1.x - p2.x);
+    const dy = Math.abs(p1.y - p2.y);
+    return Math.sqrt(Math.pow(dx / rx, 2) + Math.pow(dy / ry, 2));
+};
 
 // 计算中心轨道索引
 export const moveDxFromOrb = (selectedY: number, gridH: number) => {

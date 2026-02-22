@@ -10,9 +10,47 @@ export const calcNextPos = (from: Pos, selectedY: number, scenario: GameScenario
   y: selectedY,
 });
 
-/**
- * 验证玩家移动是否合法
- */
+// 检查是否满足胜利条件（距离判定）
+export const isWithinCaptureRange = (p1: Pos, p2: Pos, scenario: GameScenario): boolean => {
+  // 计算每个方向的距离
+  const dx = Math.abs(p1.x - p2.x);
+  const dy = Math.abs(p1.y - p2.y);
+
+  // 计算对应的物理公里数
+  const distKmX = dx * scenario.kmPerCellX;
+  const distKmY = dy * scenario.kmPerCellY;
+
+  // 欧几里得距离
+  const totalDistKm = Math.sqrt(distKmX * distKmX + distKmY * distKmY);
+
+  return totalDistKm <= scenario.ranges.identification;
+};
+
+// 检查是否满足目视条件
+export const isWithinVisualRange = (p1: Pos, p2: Pos, scenario: GameScenario): boolean => {
+  const dx = Math.abs(p1.x - p2.x);
+  const dy = Math.abs(p1.y - p2.y);
+  const distKmX = dx * scenario.kmPerCellX;
+  const distKmY = dy * scenario.kmPerCellY;
+  const totalDistKm = Math.sqrt(distKmX * distKmX + distKmY * distKmY);
+  
+  return totalDistKm <= scenario.ranges.visual;
+};
+// 检查长观测是否覆盖目标
+export const isLongScanCovered = (scanCenter: Pos, target: Pos, scenario: GameScenario): boolean => {
+  const dx = Math.abs(scanCenter.x - target.x);
+  const dy = Math.abs(scanCenter.y - target.y);
+  
+  // 使用物理距离
+  const distKm = Math.sqrt(
+    Math.pow(dx * (scenario.kmPerCellX || 35), 2) + 
+    Math.pow(dy * (scenario.kmPerCellY || 15), 2)
+  );
+  
+  // 增加 1km 的容差，避免浮点数精度问题导致“明明在圈边却没扫到”
+  return distKm <= (scenario.ranges.longScan || 175) + 1; 
+};
+
 export const isValidMove = (player: Player, fromX: number, selectedY: number, scenario: GameScenario): boolean => {
   // 1. 轨道范围检查
   if (selectedY < 0 || selectedY >= scenario.gridH) return false;

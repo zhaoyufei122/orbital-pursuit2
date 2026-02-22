@@ -46,7 +46,7 @@ export interface GameState {
     scanType: 'SHORT' | 'LONG';
     detectedColumn: number | null;
     detectedPos: Pos | null;
-    scannedRect?: { minX: number; maxX: number; minY: number; maxY: number }; // 记录长观测的区域
+    scannedArea?: { center: Pos; radius: number }; // 记录长观测的区域 (圆形)
   } | null>;
   
   // 新增：当前回合当前玩家是否已执行侦察

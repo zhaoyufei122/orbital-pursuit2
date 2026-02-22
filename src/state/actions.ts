@@ -8,4 +8,4 @@ export type GameAction =
   | { type: 'RESET_GAME' }
   | { type: 'SET_SCENARIO'; payload: { scenario: GameScenario } }
   | { type: 'SCAN_SHORT' }
-  | { type: 'SCAN_LONG'; payload: { targetRect: { minX: number; maxX: number; minY: number; maxY: number } } };
+  | { type: 'SCAN_LONG'; payload: { center: { x: number; y: number } } };

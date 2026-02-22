@@ -67,13 +67,8 @@ export const GameMatch: React.FC<GameMatchProps> = ({ engine, onBackToMenu }) =>
     }
 
     if (isScanning) {
-      // 侦察模式逻辑
-      const minX = Math.max(0, x - 5);
-      const maxX = Math.min(scenario.gridW - 1, x + 4);
-      const minY = Math.max(0, y - 5);
-      const maxY = Math.min(scenario.gridH - 1, y + 4);
-      
-      handleLongScan({ minX, maxX, minY, maxY });
+      // 侦察模式逻辑：以点击点为圆心
+      handleLongScan({ x, y });
       setIsScanning(false);
     } else if (matchPhase === 'playing' && isHumanTurn) {
       // 移动模式逻辑
@@ -130,6 +125,16 @@ export const GameMatch: React.FC<GameMatchProps> = ({ engine, onBackToMenu }) =>
 
       {/* 主布局：垂直排列，占据剩余空间 */}
       <main className="flex-1 flex flex-col items-center justify-center gap-4 w-full h-full relative">
+        {/* Debug Info - Temporary */}
+        {/* <div className="absolute top-10 left-4 z-50 bg-black/80 text-green-400 p-2 text-[10px] font-mono whitespace-pre pointer-events-none">
+            DEBUG:
+            Turn: {turn}
+            Phase: {matchPhase}
+            LastScan: {JSON.stringify(lastScan, null, 2)}
+            CurrentPlayer: {currentPlayer}
+            Scenario: {scenario?.id}
+        </div> */}
+
         {/* 状态栏放在地图上方 */}
         <div className="absolute top-0 z-30 pointer-events-none">
            {/* 使用 scale 缩小状态栏以避免遮挡 */}

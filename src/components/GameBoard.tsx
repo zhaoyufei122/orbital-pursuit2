@@ -2,11 +2,12 @@ import React from 'react';
 import { Satellite, Rocket } from 'lucide-react';
 import { motion } from 'motion/react';
 import { posOf, chebyshevDist } from '../utils';
-import type { Pos, MatchPhase } from '../types';
+import type { Pos, MatchPhase, Player } from '../types';
 import type { GameScenario } from '../config/scenarios';
+import { isWithinVisualRange } from '../game/rules';
 
 interface GameBoardProps {
-  turn: number; // Added turn prop
+  turn: number;
   aPos: Pos;
   bPos: Pos;
   matchPhase: MatchPhase;
@@ -18,7 +19,7 @@ interface GameBoardProps {
     scanType?: 'SHORT' | 'LONG';
     detectedColumn: number | null; 
     detectedPos: Pos | null;
-    scannedRect?: { minX: number; maxX: number; minY: number; maxY: number };
+    scannedArea?: { center: Pos; radius: number };
   } | null;
   onCellClick?: (x: number, y: number) => void;
   isScanning?: boolean;
@@ -26,7 +27,7 @@ interface GameBoardProps {
 }
 
 export const GameBoard: React.FC<GameBoardProps> = ({ 
-  turn, // Destructure turn
+  turn,
   aPos, 
   bPos, 
   matchPhase, 
@@ -73,9 +74,12 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   // 4. 当前是 B 的回合：B 可见，A 只有在检测范围内或被侦察到才可见
   const isFogActive = scenario.fogOfWar && matchPhase === 'playing';
   
-  const isAVisible = !isFogActive || !currentPlayer || currentPlayer === 'A' || chebyshevDist(aPos, bPos) <= 1 || (scanResult?.detectedPos?.x === aPos.x && scanResult?.detectedPos?.y === aPos.y);
+  // 使用物理目视距离判断是否可见 (100km)
+  const inVisualRange = isWithinVisualRange(aPos, bPos, scenario);
+
+  const isAVisible = !isFogActive || !currentPlayer || currentPlayer === 'A' || inVisualRange || (scanResult?.detectedPos && scanResult.detectedPos.x === aPos.x && scanResult.detectedPos.y === aPos.y);
   
-  const isBVisible = !isFogActive || !currentPlayer || currentPlayer === 'B' || chebyshevDist(aPos, bPos) <= 1 || (scanResult?.detectedPos?.x === bPos.x && scanResult?.detectedPos?.y === bPos.y);
+  const isBVisible = !isFogActive || !currentPlayer || currentPlayer === 'B' || inVisualRange || (scanResult?.detectedPos && scanResult.detectedPos.x === bPos.x && scanResult.detectedPos.y === bPos.y);
 
   return (
     <div className="w-full h-full overflow-auto flex items-center justify-center bg-slate-950/50 rounded-xl border border-slate-800/50">
@@ -134,17 +138,24 @@ export const GameBoard: React.FC<GameBoardProps> = ({
           Array.from({ length: scenario.gridW }).map((_, x) => {
             const pos = posOf(x, y);
             const isAArea = x >= scenario.aMinX && x <= scenario.aMaxX;
-            const isTargetLock = chebyshevDist({ x, y }, bPos) <= 1;
+            const isTargetLock = chebyshevDist({ x, y }, bPos) <= 1; // 仅作为锁定动画参考
             
             const isScannedColumn = scanResult?.detectedColumn === x;
-            const isScannedPos = scanResult?.detectedPos?.x === x && scanResult?.detectedPos?.y === y;
             
             // Check if cell is within Long Scan Rect
-            const inScannedRect = 
-                scanResult?.scanType === 'LONG' && 
-                scanResult.scannedRect &&
-                x >= scanResult.scannedRect.minX && x <= scanResult.scannedRect.maxX &&
-                y >= scanResult.scannedRect.minY && y <= scanResult.scannedRect.maxY;
+            let inScannedArea = false;
+            let radius = 0;
+            if (scanResult?.scanType === 'LONG' && scanResult.scannedArea) {
+                radius = scanResult.scannedArea.radius;
+                const { center } = scanResult.scannedArea;
+                const dx = Math.abs(x - center.x);
+                const dy = Math.abs(y - center.y);
+                const distKm = Math.sqrt(
+                  Math.pow(dx * (scenario.kmPerCellX || 35), 2) + 
+                  Math.pow(dy * (scenario.kmPerCellY || 15), 2)
+                );
+                inScannedArea = distKm <= radius;
+            }
 
             const isScanFresh = scanResult?.turn === turn;
             // 调整历史数据样式：不再过度变暗，而是稍微降低饱和度和亮度，保持可读性
@@ -154,7 +165,29 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             const isCurrentPos = (currentPlayer === 'A' && aPos.x === x && aPos.y === y) || (currentPlayer === 'B' && bPos.x === x && bPos.y === y);
 
             // Determine if any scan overlay should be rendered
-            const showScanOverlay = isScannedColumn || isScannedPos || (inScannedRect && !scanResult?.detectedPos) || (inScannedRect && scanResult?.detectedPos && !isScannedPos);
+            // 使用物理距离计算是否在扫描范围内
+            // 上面已经计算了 inScannedArea
+
+            // 强制显示：如果当前格子是 detectedPos，无论其他条件如何，都视为 isTargetPos
+            // 确保 detectedPos 对象的坐标与当前 x,y 匹配
+            const isTargetPos = scanResult?.detectedPos?.x === x && scanResult?.detectedPos?.y === y;
+
+            const showScanOverlay = isScannedColumn || isTargetPos || (inScannedArea && !scanResult?.detectedPos) || (inScannedArea && scanResult?.detectedPos && !isTargetPos);
+
+            // 2. 导引区域 (Visual Guidance Area, 100km)
+            const dxB = Math.abs(x - bPos.x);
+            const dyB = Math.abs(y - bPos.y);
+            const distKmB = Math.sqrt(
+                Math.pow(dxB * (scenario.kmPerCellX || 35), 2) + 
+                Math.pow(dyB * (scenario.kmPerCellY || 15), 2)
+            );
+            
+            // 判定是否在区域内
+            const isIdentZone = distKmB <= (scenario.ranges?.identification || 50);
+            const isVisualZone = distKmB <= (scenario.ranges?.visual || 100);
+
+            // 可视化样式：仅在 B 可见时显示
+            const showZoneHighlight = isBVisible;
 
             return (
               <div
@@ -166,6 +199,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                       ? 'bg-blue-500/5 border border-blue-400/10'
                       : 'bg-slate-800/10 border border-slate-700/20'
                   }
+                  ${showZoneHighlight && isIdentZone ? 'bg-red-500/20 border border-red-500/40' : ''}
+                  ${showZoneHighlight && isVisualZone && !isIdentZone ? 'bg-red-500/5 border border-dashed border-red-500/20' : ''}
                   ${isScanning ? 'cursor-crosshair hover:bg-amber-500/30 hover:border-amber-400' : ''}
                   ${isValidMoveTarget && !isCurrentPos ? 'cursor-pointer z-30 border-2 border-emerald-400/80 bg-emerald-500/40 hover:bg-emerald-500/60 hover:scale-105 shadow-[0_0_15px_rgba(52,211,153,0.6)]' : ''}
                   ${isValidMoveTarget && isCurrentPos ? 'cursor-pointer z-30 border-2 border-white/70 bg-white/20 hover:bg-white/30' : ''}
@@ -176,9 +211,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                  {showScanOverlay && (
                     <div className={`absolute inset-0 pointer-events-none rounded-sm transition-all duration-300 ${opacityClass}
                       ${isScannedColumn ? 'bg-amber-500/20 border border-amber-500/40 shadow-[0_0_10px_rgba(245,158,11,0.2)]' : ''}
-                      ${isScannedPos ? 'bg-red-500/40 border border-red-500/80 shadow-[0_0_15px_rgba(239,68,68,0.4)]' : ''}
-                      ${inScannedRect && !scanResult?.detectedPos ? 'bg-slate-700/30 border border-slate-600/40 border-dashed' : ''}
-                      ${inScannedRect && scanResult?.detectedPos && !isScannedPos ? 'bg-red-900/10 border border-red-900/20' : ''}
+                      ${isTargetPos ? 'bg-red-500/40 border border-red-500/80 shadow-[0_0_15px_rgba(239,68,68,0.4)]' : ''}
+                      ${inScannedArea && !scanResult?.detectedPos ? 'bg-slate-700/30 border border-slate-600/40 border-dashed' : ''}
+                      ${inScannedArea && scanResult?.detectedPos && !isTargetPos ? 'bg-red-900/10 border border-red-900/20' : ''}
                     `} />
                  )}
 

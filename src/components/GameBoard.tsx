@@ -1,5 +1,5 @@
 import React from 'react';
-import { Satellite, Rocket } from 'lucide-react';
+import { Satellite, Rocket, ChevronUp, ChevronDown } from 'lucide-react';
 import { motion } from 'motion/react';
 import { posOf, chebyshevDist } from '../utils';
 import type { Pos, MatchPhase, Player } from '../types';
@@ -83,6 +83,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   
   const isBVisible = !isFogActive || !currentPlayer || currentPlayer === 'B' || inVisualDist || (scanResult?.detectedPos && scanResult.detectedPos.x === bPos.x && scanResult.detectedPos.y === bPos.y);
 
+  // 获取当前玩家的当前位置 (用于 HUD 定位)
+  const currentPos = currentPlayer === 'A' ? aPos : bPos;
+  // 获取当前玩家在当前位置是否可见 (如果不可见，HUD 应该也隐藏或特殊处理?) - 玩家自己当然可见
+  // 仅在 isHumanTurn 时显示 HUD
+
   return (
     <div className="w-full h-full overflow-auto flex items-center justify-center bg-slate-950/50 rounded-xl border border-slate-800/50">
       <div 
@@ -135,6 +140,96 @@ export const GameBoard: React.FC<GameBoardProps> = ({
           );
         })}
 
+        {/* HUD：竖直移动控制条 (仅在人类回合且非扫描模式时显示) */}
+        {!isScanning && isHumanTurn && matchPhase === 'playing' && currentPlayer && (
+          <div className="absolute z-50 pointer-events-none" 
+               style={{ 
+                 left: posOf(currentPos.x, 0).x - 10, // 稍微左移一点，放在格子左侧
+                 top: 50, 
+                 bottom: 50,
+                 width: 60
+               }}
+          >
+             {/* 这一层是 HUD 容器，覆盖当前列 */}
+             {/* 渲染所有合法的目标行按钮 */}
+             {validMoves?.map((move) => {
+                const isCurrent = move.y === currentPos.y;
+                const isUp = move.y < currentPos.y;
+                const isDown = move.y > currentPos.y;
+                const fuelCost = Math.abs(move.y - currentPos.y) * 0.6;
+                const pos = posOf(0, move.y); // 只取 Y 坐标，X 相对定位
+
+                return (
+                  <div 
+                    key={`hud-btn-${move.y}`}
+                    className="absolute left-0 w-full h-[42px] flex items-center justify-center pointer-events-auto group"
+                    style={{ top: pos.y - 50 }} // posOf 基于 padding 50
+                    onClick={() => onCellClick?.(move.x, move.y)}
+                  >
+
+                    {/* 按钮主体 - 确保 z-index 高于预测条 */}
+                    <div className={`
+                      relative flex items-center justify-center transition-all duration-200 z-10
+                      ${isCurrent 
+                        ? 'w-10 h-10 bg-transparent border-2 border-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.4)] z-20 rounded-md' 
+                        : 'w-6 h-8 bg-emerald-900/40 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500 hover:text-white hover:w-10 hover:h-8 hover:shadow-[0_0_10px_rgba(16,185,129,0.4)] z-10 rounded'
+                      }
+                    `}>
+                      {isCurrent ? null : (
+                        <span className="opacity-0 group-hover:opacity-100 font-mono text-[10px] whitespace-nowrap">
+                          {fuelCost.toFixed(1)}
+                        </span>
+                      )}
+                      
+                      {/* 装饰性三角/箭头 */}
+                      {!isCurrent && (
+                         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-emerald-500/50 group-hover:hidden">
+                            {isUp ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                         </div>
+                      )}
+                    </div>
+
+                    {/* 位置预测：长圆角矩形 */
+                     /* 优化：添加水平偏移，避免与半透明按钮重叠 */
+                     /* 优化：延伸至终点格约 3/4 处 (center + 11px) */
+                    !isCurrent && Math.abs(move.x - currentPos.x) > 0 && (
+                        <div className="absolute top-1/2 -translate-y-1/2 pointer-events-none transition-opacity duration-200 z-0"
+                             style={{
+                               // 计算偏移量：避开按钮区域
+                               // 按钮半宽约 14px (gap)
+                               // 目标格: 延伸至中心点外约 11px 处 (即覆盖约 3/4 格宽, 21 + 10.5)
+                               // width = dist * 42 - gap + extension = dist * 42 - 14 + 11 = dist * 42 - 3
+                               // left (左移) = 30 - (dist * 42) - extension = 30 - (dist * 42) - 11
+                               // left (右移) = 30 + gap = 30 + 14
+                               left: move.x < currentPos.x 
+                                 ? 30 - (Math.abs(move.x - currentPos.x) * 42) - 11
+                                 : 30 + 14,
+                               
+                               width: Math.max(0, (Math.abs(move.x - currentPos.x) * 42) - 3), 
+                               height: 24,
+                               marginTop: -1,
+                               
+                               // 圆角处理：远离按钮的一端完全圆角，靠近按钮的一端小圆角
+                               borderRadius: move.x < currentPos.x ? '12px 2px 2px 12px' : '2px 12px 12px 2px',
+                             }}
+                        >
+                           {/* 浅色背景条 */}
+                           <div className={`w-full h-full bg-emerald-500/5 border-emerald-500/20
+                             ${move.x < currentPos.x ? 'border-y border-l' : 'border-y border-r'}
+                           `} style={{ borderRadius: 'inherit' }} />
+                           
+                           {/* 悬停时加深 */}
+                           <div className={`absolute inset-0 w-full h-full bg-emerald-500/10 shadow-[0_0_10px_rgba(16,185,129,0.2)] opacity-0 group-hover:opacity-100 transition-opacity border-emerald-400/50
+                             ${move.x < currentPos.x ? 'border-y-2 border-l-2' : 'border-y-2 border-r-2'}
+                           `} style={{ borderRadius: 'inherit' }} />
+                        </div>
+                    )}
+                  </div>
+                );
+             })}
+          </div>
+        )}
+
         {/* 渲染矩形网格 */}
         {Array.from({ length: scenario.gridH }).map((_, y) =>
           Array.from({ length: scenario.gridW }).map((_, x) => {
@@ -158,7 +253,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             // 调整历史数据样式：不再过度变暗，而是稍微降低饱和度和亮度，保持可读性
             const opacityClass = isScanFresh ? 'opacity-100 z-10' : 'opacity-60 brightness-75 grayscale-[30%] z-0';
             
-            const isValidMoveTarget = !isScanning && validMoves?.some(m => m.x === x && m.y === y);
+            // OLD GHOST UNIT LOGIC REMOVED
+            // const isValidMoveTarget = !isScanning && validMoves?.some(m => m.x === x && m.y === y);
+            // Instead, we only highlight the CURRENT position if it's a hold
             const isCurrentPos = (currentPlayer === 'A' && aPos.x === x && aPos.y === y) || (currentPlayer === 'B' && bPos.x === x && bPos.y === y);
 
             // Determine if any scan overlay should be rendered
@@ -184,10 +281,18 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             // 可视化样式：仅在 B 可见时显示
             const showZoneHighlight = isBVisible;
 
+            // 如果是扫描模式，允许点击所有格子
+            // 如果是移动模式，只允许点击 HUD 按钮 (HUD 已独立渲染)，但为了防止误触或逻辑兼容，这里可以保留基础的点击响应，或者禁用网格点击
+            // 实际上，HUD 按钮是在网格之上的，所以网格点击会被 HUD 拦截。但为了支持点击目标格（Ghost Unit 的替代品）
+            // 我们之前移除了 Ghost Unit。现在逻辑是：只能点 HUD 按钮。
+            // 除非：用户想点击那个“预测终点”？目前 HUD 设计已经覆盖了。
+            
+            const isInteractive = isScanning; // 只有扫描模式下，网格本身是可交互的
+
             return (
               <div
                 key={`cell-${x}-${y}`}
-                onClick={() => onCellClick?.(x, y)}
+                onClick={() => isInteractive && onCellClick?.(x, y)}
                 className={`absolute w-[40px] h-[40px] rounded-sm transition-all duration-300 backdrop-blur-sm z-10 group
                   ${
                     isAArea
@@ -197,7 +302,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                   ${showZoneHighlight && isIdentZone ? 'bg-red-500/20 border border-red-500/40' : ''}
                   ${showZoneHighlight && isVisualZone && !isIdentZone ? 'bg-red-500/5 border border-dashed border-red-500/20' : ''}
                   ${isScanning ? 'cursor-crosshair hover:bg-amber-500/30 hover:border-amber-400' : ''}
-                  ${isValidMoveTarget ? 'cursor-pointer z-30 hover:scale-105' : ''}
                 `}
                 style={{ left: pos.x, top: pos.y }}
               >
@@ -210,32 +314,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                       ${inScannedArea && scanResult?.detectedPos && !isTargetPos ? 'bg-red-900/10 border border-red-900/20' : ''}
                     `} />
                  )}
-
-                 {/* 可行移动高亮覆盖层 - 确保在观测层之上 */}
-                 {isValidMoveTarget && (
-                    <div className={`absolute inset-0 pointer-events-none rounded-sm z-20 border-2 border-emerald-400/80 shadow-[0_0_15px_rgba(52,211,153,0.6)] transition-all duration-300
-                        ${isCurrentPos ? 'bg-emerald-500/20' : 'bg-emerald-500/40'}
-                        group-hover:bg-emerald-500/60
-                    `} />
-                 )}
-
-                {/* 移动目标的幽灵图标 - 层级在观测层之上 */}
-                {isValidMoveTarget && !isCurrentPos && (
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
-                    {currentPlayer === 'A' ? (
-                      <Satellite size={16} className="text-emerald-100 drop-shadow-md" />
-                    ) : (
-                      <Rocket size={16} className="text-emerald-100 drop-shadow-md" />
-                    )}
-                  </div>
-                )}
-                
-                {/* 当前位置作为移动目标的提示 (Hold Position) */}
-                {isValidMoveTarget && isCurrentPos && (
-                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                     <span className="text-[10px] font-mono text-white font-bold drop-shadow-md">HOLD</span>
-                   </div>
-                )}
 
                 {/* 锁定框只在 B 视角或无迷雾时可见，或者是游戏结束 */}
                 {isTargetLock && matchPhase !== 'gameover' && (currentPlayer === 'B' || !isFogActive) && (

@@ -6,3 +6,6 @@ export type Mode = 'hotseat' | 'ai';
 export type Pos = { x: number; y: number };
 
 export type InteractionMode = 'IDLE' | 'MOVING' | 'SCAN_LONG_AIM';
+
+export type TimeOfDay = 'NIGHT' | 'DAWN' | 'DAY' | 'DUSK';
+export type Weather = 'CLEAR' | 'CLOUDY';

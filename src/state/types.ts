@@ -31,6 +31,9 @@ export interface GameState {
   pendingAMove: Pos | null;
   bTimeInRange: number;
 
+  // 天气与环境 (新)
+  weather: 'CLEAR' | 'CLOUDY'; // 当前回合天气 (影响地基观测)
+  
   // 资源与侦察
   resources: Record<Player, Resources>;
   // 废弃旧的 scanResult，改为每个玩家独立的侦察记录
@@ -54,6 +57,6 @@ export interface GameState {
 }
 
 export const INITIAL_RESOURCES: Resources = {
-  fuel: 100,
+  fuel: 0,
   scanPoints: 5,
 };

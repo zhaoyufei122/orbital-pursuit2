@@ -36,6 +36,7 @@ export const GameMatch: React.FC<GameMatchProps> = ({ engine, onBackToMenu }) =>
     // scanResult, // Removed
     lastScan,      // Added
     hasPerformedScan, // Added
+    weather,
   } = engine;
 
   const [interactionMode, setInteractionMode] = useState<InteractionMode>('IDLE');
@@ -140,10 +141,16 @@ export const GameMatch: React.FC<GameMatchProps> = ({ engine, onBackToMenu }) =>
         </div> */}
 
         {/* 状态栏放在地图上方 */}
-        <div className="absolute top-0 z-30 pointer-events-none">
+        <div className="absolute top-0 z-30 pointer-events-none w-full flex justify-center">
            {/* 使用 scale 缩小状态栏以避免遮挡 */}
            <div className="scale-90 origin-top">
-             <GameStatus turn={turn} bTimeInRange={bTimeInRange} currentPlayer={currentPlayer} />
+             <GameStatus 
+                turn={turn} 
+                bTimeInRange={bTimeInRange} 
+                currentPlayer={currentPlayer} 
+                resources={resources}
+                scenario={scenario}
+             />
            </div>
         </div>
 
@@ -190,6 +197,7 @@ export const GameMatch: React.FC<GameMatchProps> = ({ engine, onBackToMenu }) =>
                 interactionMode={interactionMode}
                 turn={turn}
                 hasPerformedScan={hasPerformedScan}
+                weather={weather}
               />
             )
           ) : (

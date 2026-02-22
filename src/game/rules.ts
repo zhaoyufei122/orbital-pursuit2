@@ -1,5 +1,5 @@
 import { moveDxFromOrb } from '../utils';
-import type { Player, Pos, MatchPhase } from '../types';
+import type { Player, Pos, MatchPhase, TimeOfDay, Weather } from '../types';
 import type { GameScenario } from '../config/scenarios';
 import { isPointInRange } from './physics';
 
@@ -11,12 +11,64 @@ export const calcNextPos = (from: Pos, selectedY: number, scenario: GameScenario
   y: selectedY,
 });
 
+// 获取当前回合的时间段
+// Turn 1 (0-6h): Midnight (3:00) -> NIGHT
+// Turn 2 (6-12h): Morning (9:00) -> DAWN (晨) / DAY
+// Turn 3 (12-18h): Noon (15:00) -> DAY
+// Turn 4 (18-24h): Evening (21:00) -> DUSK (昏) / NIGHT
+// 映射：1=NIGHT, 2=DAWN, 3=DAY, 4=DUSK
+export const getTimeOfDay = (turn: number): TimeOfDay => {
+  const cycle = (turn - 1) % 4; // 0, 1, 2, 3
+  switch (cycle) {
+    case 0: return 'NIGHT';
+    case 1: return 'DAWN';
+    case 2: return 'DAY';
+    case 3: return 'DUSK';
+    default: return 'NIGHT';
+  }
+};
+
+// 检查地基观测是否允许
+// 规则：
+// - DAY: 无法观测
+// - DAWN/DUSK: 仅短观测 (假设光照条件只适合巡天)
+// - NIGHT: 全功能 (长/短观测均可)
+// - 天气: CLOUDY 时无法进行任何地基观测 (或者大幅降低成功率，这里简化为无法观测)
+export const isGroundObservationAllowed = (
+  turn: number, 
+  weather: Weather, 
+  scanType: 'SHORT' | 'LONG',
+  scenario: GameScenario
+): { allowed: boolean; reason?: string } => {
+  if (!scenario.weatherEnabled) return { allowed: true };
+
+  // 1. 天气检查
+  if (weather === 'CLOUDY') {
+    return { allowed: false, reason: '天气多云，地基观测受阻' };
+  }
+
+  // 2. 时间检查
+  const time = getTimeOfDay(turn);
+  
+  if (time === 'DAY') {
+    return { allowed: false, reason: '白昼强光，无法成像' };
+  }
+
+  if ((time === 'DAWN' || time === 'DUSK') && scanType === 'LONG') {
+    return { allowed: false, reason: '晨昏时段仅支持短观测' };
+  }
+
+  return { allowed: true };
+};
+
 // 检查是否满足胜利条件（距离判定）
+// 移除盲区判定：GEO卫星绝大多数时间在阳光下，且观测时长足够
 export const isWithinCaptureRange = (p1: Pos, p2: Pos, scenario: GameScenario): boolean => {
   return isPointInRange(p1, p2, scenario.ranges.identification, scenario);
 };
 
 // 检查是否满足目视条件
+// 移除盲区判定
 export const isWithinVisualRange = (p1: Pos, p2: Pos, scenario: GameScenario): boolean => {
   return isPointInRange(p1, p2, scenario.ranges.visual, scenario);
 };

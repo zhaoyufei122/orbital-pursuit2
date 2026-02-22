@@ -2,9 +2,9 @@ import type { GameState } from './types';
 import type { GameAction } from './actions';
 import { SCENARIO_CLASSIC } from '../config/scenarios';
 import { chebyshevDist } from '../utils';
-import { isValidMove, calcNextPos, checkWinCondition, isWithinCaptureRange, isLongScanCovered, isWithinVisualRange } from '../game/rules'; // Added isWithinVisualRange
+import { isValidMove, calcNextPos, checkWinCondition, isWithinCaptureRange, isLongScanCovered, isWithinVisualRange, isGroundObservationAllowed } from '../game/rules'; // Added isWithinVisualRange
 import { INITIAL_RESOURCES } from './types';
-import type { Player, Pos } from '../types';
+import type { Player, Pos, Weather } from '../types';
 
 export const initialState: GameState = {
   mode: null,
@@ -24,6 +24,24 @@ export const initialState: GameState = {
   },
   lastScan: { A: null, B: null },
   hasPerformedScan: false,
+  weather: 'CLEAR', // 默认为晴朗
+};
+
+// 简单的天气生成器
+// 20% 概率生成多云，仅在 weatherEnabled 时生效
+// 使用简单的马尔可夫链模拟天气持续性：
+// - 如果当前是 CLEAR，15% 转为 CLOUDY (降低坏天气发生率)
+// - 如果当前是 CLOUDY，60% 转为 CLEAR (多云倾向于持续，但不如晴朗稳定)
+const generateWeather = (scenario: GameScenario, currentWeather: Weather): Weather => {
+  if (!scenario.weatherEnabled) return 'CLEAR';
+  
+  const rand = Math.random();
+  if (currentWeather === 'CLEAR') {
+    return rand < 0.15 ? 'CLOUDY' : 'CLEAR';
+  } else {
+    // CLOUDY
+    return rand < 0.6 ? 'CLEAR' : 'CLOUDY';
+  }
 };
 
 export function gameReducer(state: GameState, action: GameAction): GameState {
@@ -84,9 +102,19 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     }
 
     case 'SCAN_SHORT': {
-      const { currentPlayer, scenario, aPos, bPos, hasPerformedScan } = state;
+      const { currentPlayer, scenario, aPos, bPos, hasPerformedScan, turn, weather } = state;
       if (!scenario) return state;
       if (hasPerformedScan) return state; // 本回合已观测过
+
+      // 检查是否允许观测
+      const allowedCheck = isGroundObservationAllowed(turn, weather, 'SHORT', scenario);
+      if (!allowedCheck.allowed) {
+        // 这里理想情况下应该通过 UI 提示用户，但 Reducer 只能返回 state
+        // 我们可以添加一个 error 字段，或者让 UI 预先禁用按钮
+        // 这里直接返回 state，相当于操作无效
+        console.warn(`Short scan prevented: ${allowedCheck.reason}`);
+        return state;
+      }
 
       // 确定对手
       const opponent = currentPlayer === 'A' ? 'B' : 'A';
@@ -110,9 +138,16 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     }
 
     case 'SCAN_LONG': {
-      const { currentPlayer, scenario, aPos, bPos, hasPerformedScan } = state;
+      const { currentPlayer, scenario, aPos, bPos, hasPerformedScan, turn, weather } = state;
       if (!scenario) return state;
       if (hasPerformedScan) return state; // 本回合已观测过
+
+      // 检查是否允许观测
+      const allowedCheck = isGroundObservationAllowed(turn, weather, 'LONG', scenario);
+      if (!allowedCheck.allowed) {
+        console.warn(`Long scan prevented: ${allowedCheck.reason}`);
+        return state;
+      }
 
       const { center } = action.payload; // 改为 center
 
@@ -156,11 +191,25 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (currentPlayer === 'A') {
         if (!isValidMove('A', aPos.x, selectedY, scenario)) return state;
         const nextA = calcNextPos(aPos, selectedY, scenario);
+        
+        // 计算燃料消耗: 每移动1格轨道(15km) 消耗 0.6 fuel
+        const dy = Math.abs(aPos.y - selectedY);
+        // 如果高度没有变化（dy=0），则不消耗燃料（漂移不耗能）
+        const fuelCost = dy * 0.6;
+        // 燃料累加模式：记录已消耗的 Delta V
+        const nextFuel = state.resources.A.fuel + fuelCost;
+        
+        // 蓝方移动后不更新回合数，也不更新天气（只有在回合数变更时才更新天气）
+        // 等待红方移动
         return {
           ...state,
           pendingAMove: nextA,
           currentPlayer: 'B',
           hasPerformedScan: false, // 重置回合内观测标记
+          resources: {
+            ...state.resources,
+            A: { ...state.resources.A, fuel: nextFuel }
+          }
         };
       }
 
@@ -171,11 +220,21 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         const nextB = calcNextPos(bPos, selectedY, scenario);
         const finalA = pendingAMove || aPos;
         
+        // 计算燃料消耗
+        const dy = Math.abs(bPos.y - selectedY);
+        const fuelCost = dy * 0.6;
+        // 燃料累加模式：记录已消耗的 Delta V
+        const nextFuel = state.resources.B.fuel + fuelCost;
+
         // 使用物理距离判定胜利条件
+        // 移除 turn 传参，因为盲区约束已移除
         const inRange = isWithinCaptureRange(finalA, nextB, scenario);
         const newTimeInRange = inRange ? bTimeInRange + 1 : 0;
         
         const { nextPhase, nextWinner } = checkWinCondition(newTimeInRange, turn + 1, scenario);
+
+        // 回合结束，更新天气
+        const nextWeather = generateWeather(scenario, state.weather);
 
         return {
           ...state,
@@ -188,6 +247,11 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           currentPlayer: 'A',
           pendingAMove: null,
           hasPerformedScan: false, // 重置回合内观测标记
+          weather: nextWeather,    // 更新天气
+          resources: {
+            ...state.resources,
+            B: { ...state.resources.B, fuel: nextFuel }
+          }
         };
       }
 

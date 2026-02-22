@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Satellite, Rocket, EyeOff, Search, Radar, Sun, Moon } from 'lucide-react';
+import { Satellite, Rocket, EyeOff, Search, Radar, Sun, Moon, Cloud, CloudRain } from 'lucide-react';
 import { motion } from 'motion/react';
-import type { Player, Mode, Pos, InteractionMode } from '../types';
+import type { Player, Mode, Pos, InteractionMode, Weather } from '../types';
 import type { GameScenario } from '../config/scenarios';
+import { getTimeOfDay, isGroundObservationAllowed } from '../game/rules';
 
 interface GameControlsProps {
   isHumanTurn: boolean;
@@ -18,6 +19,7 @@ interface GameControlsProps {
   interactionMode: InteractionMode;
   turn: number;
   hasPerformedScan: boolean;
+  weather: Weather;
 }
 
 export const GameControls: React.FC<GameControlsProps> = ({
@@ -34,6 +36,7 @@ export const GameControls: React.FC<GameControlsProps> = ({
   interactionMode,
   turn,
   hasPerformedScan,
+  weather,
 }) => {
   if (!isHumanTurn) {
     return (
@@ -69,24 +72,20 @@ export const GameControls: React.FC<GameControlsProps> = ({
 
   // 动态生成按钮列表
   const orbs = Array.from({ length: scenario.gridH }, (_, i) => i);
-  // 计算中心索引，用于计算相对位移 dx
-  // 假设 GRID_H 为 5，中心是 2 (5-1)/2 = 2
-  // 假设 GRID_H 为 11，中心是 5 (11-1)/2 = 5
   const centerOrb = (scenario.gridH - 1) / 2;
 
-  // 昼夜逻辑：每四回合循环，1-2为夜（可观测），3-4为昼（不可观测）
-  // turn 1: 1%4=1 (Night)
-  // turn 2: 2%4=2 (Night)
-  // turn 3: 3%4=3 (Day)
-  // turn 4: 0%4=0 (Day)
-  const isNight = (turn % 4 === 1) || (turn % 4 === 2);
-  
-  // 检查是否已观测
-  // 我们需要从外部传入 hasPerformedScan，或者在 GameMatch 中处理按钮禁用逻辑
-  // 但为了简化，我们假设 onShortScan 和 onToggleScanMode 如果被禁用就不应该被触发
-  // 这里暂时只根据 isNight 禁用，后续通过 props 接收 hasPerformedScan
-  // TODO: Add hasPerformedScan prop
-  const canScan = isNight && !hasPerformedScan;
+  // 获取时间段
+  const timeOfDay = getTimeOfDay(turn);
+  const isNight = timeOfDay === 'NIGHT';
+  const isDay = timeOfDay === 'DAY';
+  const isDawnDusk = timeOfDay === 'DAWN' || timeOfDay === 'DUSK';
+
+  // 检查观测权限
+  const shortScanCheck = isGroundObservationAllowed(turn, weather, 'SHORT', scenario);
+  const longScanCheck = isGroundObservationAllowed(turn, weather, 'LONG', scenario);
+
+  const canShortScan = !hasPerformedScan && shortScanCheck.allowed;
+  const canLongScan = !hasPerformedScan && longScanCheck.allowed;
   
   return (
     <div
@@ -97,19 +96,29 @@ export const GameControls: React.FC<GameControlsProps> = ({
       }`}
     >
       <div className="flex items-center gap-3 mb-2 flex-wrap justify-center text-center">
-        {/* 昼夜指示器 */}
-        {scenario.fogOfWar && (
-          <div className={`absolute top-4 right-4 flex items-center gap-1.5 px-2 py-1 rounded-lg border text-xs font-bold ${
-            isNight 
-              ? hasPerformedScan 
-                ? 'bg-slate-800/80 border-slate-600/50 text-slate-400' // Night but scanned
-                : 'bg-indigo-950/80 border-indigo-500/50 text-indigo-200' // Night ready
-              : 'bg-amber-950/80 border-amber-500/50 text-amber-200' // Day
-          }`}>
-            {isNight ? <Moon size={14} /> : <Sun size={14} />}
-            <span>{isNight ? (hasPerformedScan ? 'NIGHT (Scanned)' : 'NIGHT (Scan Ready)') : 'DAY (No Scan)'}</span>
-          </div>
-        )}
+        {/* 昼夜与天气指示器 */}
+        <div className={`absolute top-4 right-4 flex flex-col gap-2 items-end`}>
+            {/* 时间指示 */}
+            <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border text-xs font-bold ${
+                isNight ? 'bg-indigo-950/80 border-indigo-500/50 text-indigo-200' :
+                isDay ? 'bg-amber-100/80 border-amber-500/50 text-amber-800' :
+                'bg-orange-900/80 border-orange-500/50 text-orange-200' // Dawn/Dusk
+            }`}>
+                {isNight ? <Moon size={14} /> : <Sun size={14} />}
+                <span>{timeOfDay} (Turn {turn})</span>
+            </div>
+            
+            {/* 天气指示 (仅在开启天气系统时显示) */}
+            {scenario.weatherEnabled && (
+                <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border text-xs font-bold ${
+                    weather === 'CLEAR' ? 'bg-blue-400/20 border-blue-400/50 text-blue-200' :
+                    'bg-slate-500/50 border-slate-400/50 text-slate-200'
+                }`}>
+                    {weather === 'CLEAR' ? <Sun size={14} /> : <CloudRain size={14} />}
+                    <span>{weather === 'CLEAR' ? 'CLEAR' : 'CLOUDY'}</span>
+                </div>
+            )}
+        </div>
 
         {currentPlayer === 'A' ? (
           <>
@@ -142,36 +151,47 @@ export const GameControls: React.FC<GameControlsProps> = ({
 
       {/* 观测控制面板 (仅在有迷雾且是真实模式时显示，或者总是显示如果是拟真模式) */}
       {scenario.fogOfWar && (
-        <div className="w-full flex justify-center gap-4 mb-2">
-          <button
-            onClick={onShortScan}
-            disabled={!canScan}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-colors text-xs font-bold ${
-              !canScan
-                ? 'bg-slate-800/50 border-slate-700/50 text-slate-500 cursor-not-allowed'
-                : 'bg-slate-800 hover:bg-slate-700 border-slate-600 text-slate-300 hover:text-white hover:border-slate-500'
-            }`}
-          >
-            <Search size={14} />
-            <span>短观测 (Short Scan)</span>
-          </button>
-
-          <div className="relative">
+        <div className="w-full flex justify-center gap-4 mb-2 flex-col items-center">
+          <div className="flex gap-4">
             <button
-              onClick={onToggleScanMode}
-              disabled={!canScan}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-colors text-xs font-bold ${
-                !canScan
-                  ? 'bg-slate-800/50 border-slate-700/50 text-slate-500 cursor-not-allowed'
-                  : interactionMode === 'SCAN_LONG_AIM'
-                    ? 'bg-amber-500/20 border-amber-500 text-amber-300 animate-pulse' 
-                    : 'bg-slate-800 hover:bg-slate-700 border-slate-600 text-slate-300'
-              }`}
+                onClick={onShortScan}
+                disabled={!canShortScan}
+                title={!shortScanCheck.allowed ? shortScanCheck.reason : ''}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-colors text-xs font-bold ${
+                !canShortScan
+                    ? 'bg-slate-800/50 border-slate-700/50 text-slate-500 cursor-not-allowed'
+                    : 'bg-slate-800 hover:bg-slate-700 border-slate-600 text-slate-300 hover:text-white hover:border-slate-500'
+                }`}
             >
-              <Radar size={14} />
-              <span>{interactionMode === 'SCAN_LONG_AIM' ? '点击地图选择中心点...' : '长观测 (Sector Scan)'}</span>
+                <Search size={14} />
+                <span>短观测 (Short Scan)</span>
             </button>
+
+            <div className="relative">
+                <button
+                onClick={onToggleScanMode}
+                disabled={!canLongScan}
+                title={!longScanCheck.allowed ? longScanCheck.reason : ''}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-colors text-xs font-bold ${
+                    !canLongScan
+                    ? 'bg-slate-800/50 border-slate-700/50 text-slate-500 cursor-not-allowed'
+                    : interactionMode === 'SCAN_LONG_AIM'
+                        ? 'bg-amber-500/20 border-amber-500 text-amber-300 animate-pulse' 
+                        : 'bg-slate-800 hover:bg-slate-700 border-slate-600 text-slate-300'
+                }`}
+                >
+                <Radar size={14} />
+                <span>{interactionMode === 'SCAN_LONG_AIM' ? '点击地图选择中心点...' : '长观测 (Sector Scan)'}</span>
+                </button>
+            </div>
           </div>
+          
+          {/* 显示观测被禁用的原因 (如果有) */}
+          {(!shortScanCheck.allowed || !longScanCheck.allowed) && !hasPerformedScan && (
+             <div className="text-[10px] text-red-400 bg-red-950/30 px-2 py-1 rounded border border-red-900/50">
+                观测受限: {!shortScanCheck.allowed ? shortScanCheck.reason : longScanCheck.reason}
+             </div>
+          )}
         </div>
       )}
 

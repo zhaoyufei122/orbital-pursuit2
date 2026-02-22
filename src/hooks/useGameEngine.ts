@@ -1,5 +1,5 @@
 import { useReducer, useEffect, useCallback } from 'react';
-import type { Player, MatchPhase, Mode, Pos } from '../types';
+import type { Player, MatchPhase, Mode, Pos, Weather } from '../types';
 import { gameReducer, initialState } from '../state/gameReducer';
 import { isValidMove as checkValidMove, getValidOrbs as getAllValidOrbs, calcNextPos } from '../game/rules';
 import { assessGameState } from '../game/ai';
@@ -34,6 +34,7 @@ export interface GameEngine {
     scannedArea?: { center: Pos; radius: number };
   } | null>;
   hasPerformedScan: boolean;
+  weather: Weather;
 }
 
 export const useGameEngine = (): GameEngine => {
@@ -55,6 +56,7 @@ export const useGameEngine = (): GameEngine => {
     // scanResult, // Removed
     lastScan,      // Added
     hasPerformedScan, // Added
+    weather,       // Added
   } = state;
 
   const isAIMode = mode === 'ai';
@@ -161,5 +163,6 @@ export const useGameEngine = (): GameEngine => {
     resources,
     lastScan,
     hasPerformedScan,
+    weather,
   };
 };

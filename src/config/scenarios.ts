@@ -26,6 +26,9 @@ export interface GameScenario {
     visual: number;         // 目视导引半径 (100km)
     longScan: number;       // 长观测半径 (0.25度 -> 175km)
   };
+
+  // 天气与环境
+  weatherEnabled: boolean; // 是否启用天气系统
 }
 
 export const SCENARIO_CLASSIC: GameScenario = {
@@ -37,6 +40,7 @@ export const SCENARIO_CLASSIC: GameScenario = {
   initialAPos: { x: 5, y: 3 },
   initialBPos: { x: 1, y: 3 },
   fogOfWar: false,
+  weatherEnabled: false,
 
   aMinX: 2,
   aMaxX: 8,
@@ -62,6 +66,7 @@ export const SCENARIO_REALISTIC: GameScenario = {
   initialAPos: { x: 10, y: 5 },
   initialBPos: { x: 2, y: 5 },
   fogOfWar: true,
+  weatherEnabled: false,
   
   aMinX: 5,
   aMaxX: 14,
@@ -79,4 +84,30 @@ export const SCENARIO_REALISTIC: GameScenario = {
   },
 };
 
-export const SCENARIOS = [SCENARIO_CLASSIC, SCENARIO_REALISTIC];
+export const SCENARIO_HARDCORE: GameScenario = {
+  id: 'hardcore',
+  name: '专家模式 (Hardcore)',
+  description: '全真环境：天气系统、观测窗口限制、燃料消耗。',
+  gridW: 21,
+  gridH: 11,
+  initialAPos: { x: 10, y: 5 },
+  initialBPos: { x: 2, y: 5 },
+  fogOfWar: true,
+  weatherEnabled: true,
+  
+  aMinX: 5,
+  aMaxX: 14,
+  winTime: 2,
+  maxTurns: 24, // 增加回合数以应对天气延误
+
+  kmPerCellX: 35,
+  kmPerCellY: 15,
+
+  ranges: {
+    identification: 50,
+    visual: 100,
+    longScan: 175,
+  },
+};
+
+export const SCENARIOS = [SCENARIO_CLASSIC, SCENARIO_REALISTIC, SCENARIO_HARDCORE];

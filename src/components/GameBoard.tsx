@@ -4,7 +4,7 @@ import { motion } from 'motion/react';
 import { posOf, chebyshevDist } from '../utils';
 import type { Pos, MatchPhase, Player } from '../types';
 import type { GameScenario } from '../config/scenarios';
-import { isWithinVisualRange } from '../game/rules';
+import { isWithinVisualRange, isWithinCaptureRange } from '../game/rules';
 import { getPhysicalDistance } from '../game/physics';
 
 interface GameBoardProps {
@@ -75,12 +75,13 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   // 4. 当前是 B 的回合：B 可见，A 只有在检测范围内或被侦察到才可见
   const isFogActive = scenario.fogOfWar && matchPhase === 'playing';
   
-  // 使用物理目视距离判断是否可见 (100km)
-  const inVisualRange = isWithinVisualRange(aPos, bPos, scenario);
+  // 使用物理距离判断是否可见 (100km)，不考虑盲区 (只要距离足够近，就算发现)
+  // 否则蓝方也会受到视场盲区限制，这可能不符合“蓝方是被动逃逸者”的直觉
+  const inVisualDist = getPhysicalDistance(aPos, bPos, scenario) <= (scenario.ranges.visual || 100);
 
-  const isAVisible = !isFogActive || !currentPlayer || currentPlayer === 'A' || inVisualRange || (scanResult?.detectedPos && scanResult.detectedPos.x === aPos.x && scanResult.detectedPos.y === aPos.y);
+  const isAVisible = !isFogActive || !currentPlayer || currentPlayer === 'A' || inVisualDist || (scanResult?.detectedPos && scanResult.detectedPos.x === aPos.x && scanResult.detectedPos.y === aPos.y);
   
-  const isBVisible = !isFogActive || !currentPlayer || currentPlayer === 'B' || inVisualRange || (scanResult?.detectedPos && scanResult.detectedPos.x === bPos.x && scanResult.detectedPos.y === bPos.y);
+  const isBVisible = !isFogActive || !currentPlayer || currentPlayer === 'B' || inVisualDist || (scanResult?.detectedPos && scanResult.detectedPos.x === bPos.x && scanResult.detectedPos.y === bPos.y);
 
   return (
     <div className="w-full h-full overflow-auto flex items-center justify-center bg-slate-950/50 rounded-xl border border-slate-800/50">
@@ -173,9 +174,12 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             // 2. 导引区域 (Visual Guidance Area, 100km)
             const distKmB = getPhysicalDistance({ x, y }, bPos, scenario);
             
-            // 判定是否在区域内
-            const isIdentZone = distKmB <= (scenario.ranges?.identification || 50);
-            const isVisualZone = distKmB <= (scenario.ranges?.visual || 100);
+            // 判定是否在区域内 (Identification Range, 50km)
+            // 修正：盲区约束已移除，直接使用距离判断
+            const isIdentZone = isWithinCaptureRange(bPos, { x, y }, scenario);
+            
+            // 修正：盲区约束已移除，直接使用距离判断
+            const isVisualZone = isWithinVisualRange(bPos, { x, y }, scenario);
 
             // 可视化样式：仅在 B 可见时显示
             const showZoneHighlight = isBVisible;

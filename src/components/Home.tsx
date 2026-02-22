@@ -2,7 +2,10 @@ import React, { useState } from 'react';
 import { Satellite, Rocket, Users, Bot, BookOpen, Check } from 'lucide-react';
 import { motion } from 'motion/react';
 import type { Screen } from '../types';
-import { SCENARIOS, type GameScenario } from '../config/scenarios';
+import { SCENARIOS, SCENARIO_REALISTIC, type GameScenario } from '../config/scenarios';
+
+// 声明一个新的屏幕类型 (但实际上我们可以复用 home，或者在 Home 组件内部做状态切换)
+// 为了简单起见，我们在 Home 组件内部增加一个 CustomConfig 弹窗状态
 
 interface HomeProps {
   onStartHotseat: (scenario: GameScenario) => void;
@@ -12,6 +15,229 @@ interface HomeProps {
 
 export const Home: React.FC<HomeProps> = ({ onStartHotseat, onStartAIConfig, onNavigate }) => {
   const [selectedScenario, setSelectedScenario] = useState<GameScenario>(SCENARIOS[0]);
+  const [isCustomMode, setIsCustomMode] = useState(false);
+  
+  // 自定义模式的临时配置状态
+  const [customConfig, setCustomConfig] = useState<GameScenario>({
+    ...SCENARIO_REALISTIC,
+    id: 'custom',
+    name: '自定义模式 (Custom)',
+    description: '玩家自定义规则配置。',
+  });
+
+  const handleCustomStart = (mode: 'hotseat' | 'ai') => {
+    if (mode === 'hotseat') {
+      onStartHotseat(customConfig);
+    } else {
+      onStartAIConfig(customConfig);
+    }
+  };
+
+  if (isCustomMode) {
+    return (
+      <div className="min-h-screen bg-[radial-gradient(ellipse_at_bottom,_var(--tw-gradient-stops))] from-blue-950 via-slate-950 to-black flex items-center justify-center p-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.96 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="relative w-full max-w-2xl rounded-3xl border border-slate-700/70 bg-slate-900/90 backdrop-blur-xl shadow-2xl p-8 overflow-hidden"
+        >
+          <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+            <span className="bg-amber-500/20 text-amber-300 p-2 rounded-lg"><Rocket size={20}/></span>
+            自定义规则配置
+          </h2>
+          
+          <div className="space-y-6 text-sm text-slate-300">
+            <div className="grid grid-cols-2 gap-4">
+              <label className="flex flex-col gap-2 p-3 border border-slate-700 rounded-lg bg-slate-800/30">
+                <span className="font-bold text-blue-300">战争迷雾 (Fog of War)</span>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input 
+                      type="radio" 
+                      checked={customConfig.fogOfWar} 
+                      onChange={() => setCustomConfig({...customConfig, fogOfWar: true})}
+                      className="accent-blue-500"
+                    /> 开启
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input 
+                      type="radio" 
+                      checked={!customConfig.fogOfWar} 
+                      onChange={() => setCustomConfig({...customConfig, fogOfWar: false})}
+                      className="accent-blue-500"
+                    /> 关闭
+                  </label>
+                </div>
+              </label>
+
+              <label className="flex flex-col gap-2 p-3 border border-slate-700 rounded-lg bg-slate-800/30">
+                <span className="font-bold text-amber-300">天气系统 (Weather)</span>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input 
+                      type="radio" 
+                      checked={customConfig.weatherEnabled} 
+                      onChange={() => setCustomConfig({...customConfig, weatherEnabled: true})}
+                      className="accent-amber-500"
+                    /> 开启
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input 
+                      type="radio" 
+                      checked={!customConfig.weatherEnabled} 
+                      onChange={() => setCustomConfig({...customConfig, weatherEnabled: false})}
+                      className="accent-amber-500"
+                    /> 关闭
+                  </label>
+                </div>
+              </label>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+               <label className="flex flex-col gap-2">
+                 <span className="font-bold">地图宽度 (Grid Width)</span>
+                 <div className="flex items-center gap-2">
+                    <input 
+                    type="number" min="11" max="51" step="2"
+                    value={customConfig.gridW}
+                    onChange={(e) => setCustomConfig({...customConfig, gridW: Math.max(11, parseInt(e.target.value) || 11)})}
+                    className="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white"
+                    />
+                    <span className="text-xs text-slate-500 w-12">格</span>
+                 </div>
+               </label>
+
+               <label className="flex flex-col gap-2">
+                 <span className="font-bold">地图高度 (Grid Height)</span>
+                 <div className="flex items-center gap-2">
+                    <input 
+                    type="number" min="5" max="31" step="2"
+                    value={customConfig.gridH}
+                    onChange={(e) => setCustomConfig({...customConfig, gridH: Math.max(5, parseInt(e.target.value) || 5)})}
+                    className="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white"
+                    />
+                    <span className="text-xs text-slate-500 w-12">格</span>
+                 </div>
+               </label>
+
+               <label className="flex flex-col gap-2">
+                 <span className="font-bold">水平尺度 (km/Cell X)</span>
+                 <div className="flex items-center gap-2">
+                    <input 
+                    type="number" min="1" 
+                    value={customConfig.kmPerCellX}
+                    onChange={(e) => setCustomConfig({...customConfig, kmPerCellX: parseInt(e.target.value) || 35})}
+                    className="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white"
+                    />
+                    <span className="text-xs text-slate-500 w-12">km</span>
+                 </div>
+               </label>
+
+               <label className="flex flex-col gap-2">
+                 <span className="font-bold">垂直尺度 (km/Cell Y)</span>
+                 <div className="flex items-center gap-2">
+                    <input 
+                    type="number" min="1"
+                    value={customConfig.kmPerCellY}
+                    onChange={(e) => setCustomConfig({...customConfig, kmPerCellY: parseInt(e.target.value) || 15})}
+                    className="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white"
+                    />
+                    <span className="text-xs text-slate-500 w-12">km</span>
+                 </div>
+               </label>
+
+               <label className="flex flex-col gap-2">
+                 <span className="font-bold">识别距离 (Capture Range)</span>
+                 <div className="flex items-center gap-2">
+                    <input 
+                    type="number" min="1"
+                    value={customConfig.ranges.identification}
+                    onChange={(e) => setCustomConfig({...customConfig, ranges: {...customConfig.ranges, identification: parseInt(e.target.value) || 50}})}
+                    className="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white"
+                    />
+                    <span className="text-xs text-slate-500 w-12">km</span>
+                 </div>
+               </label>
+
+               <label className="flex flex-col gap-2">
+                 <span className="font-bold">发现距离 (Visual Range)</span>
+                 <div className="flex items-center gap-2">
+                    <input 
+                    type="number" min="1"
+                    value={customConfig.ranges.visual}
+                    onChange={(e) => setCustomConfig({...customConfig, ranges: {...customConfig.ranges, visual: parseInt(e.target.value) || 100}})}
+                    className="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white"
+                    />
+                    <span className="text-xs text-slate-500 w-12">km</span>
+                 </div>
+               </label>
+
+               <label className="flex flex-col gap-2">
+                 <span className="font-bold">长观测半径 (Long Scan)</span>
+                 <div className="flex items-center gap-2">
+                    <input 
+                    type="number" min="1"
+                    value={customConfig.ranges.longScan}
+                    onChange={(e) => setCustomConfig({...customConfig, ranges: {...customConfig.ranges, longScan: parseInt(e.target.value) || 175}})}
+                    className="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white"
+                    />
+                    <span className="text-xs text-slate-500 w-12">km</span>
+                 </div>
+               </label>
+
+               <label className="flex flex-col gap-2">
+                 <span className="font-bold">胜利所需回合 (Win Time)</span>
+                 <div className="flex items-center gap-2">
+                    <input 
+                    type="number" min="1"
+                    value={customConfig.winTime}
+                    onChange={(e) => setCustomConfig({...customConfig, winTime: parseInt(e.target.value) || 2})}
+                    className="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white"
+                    />
+                    <span className="text-xs text-slate-500 w-12">turns</span>
+                 </div>
+               </label>
+
+               <label className="flex flex-col gap-2">
+                 <span className="font-bold">最大回合 (Max Turns)</span>
+                 <div className="flex items-center gap-2">
+                    <input 
+                    type="number" min="10"
+                    value={customConfig.maxTurns}
+                    onChange={(e) => setCustomConfig({...customConfig, maxTurns: parseInt(e.target.value) || 20})}
+                    className="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white"
+                    />
+                    <span className="text-xs text-slate-500 w-12">turns</span>
+                 </div>
+               </label>
+            </div>
+          </div>
+
+          <div className="flex gap-4 mt-8 pt-4 border-t border-slate-700">
+            <button 
+              onClick={() => setIsCustomMode(false)}
+              className="px-4 py-2 rounded-lg border border-slate-600 hover:bg-slate-800 text-slate-400 transition"
+            >
+              取消
+            </button>
+            <div className="flex-1"></div>
+            <button 
+              onClick={() => handleCustomStart('hotseat')}
+              className="px-6 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold transition shadow-lg shadow-blue-900/20"
+            >
+              开始热座模式
+            </button>
+            <button 
+              onClick={() => handleCustomStart('ai')}
+              className="px-6 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold transition shadow-lg shadow-indigo-900/20"
+            >
+              开始 AI 对战
+            </button>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[radial-gradient(ellipse_at_bottom,_var(--tw-gradient-stops))] from-blue-950 via-slate-950 to-black flex items-center justify-center p-4">
@@ -68,9 +294,18 @@ export const Home: React.FC<HomeProps> = ({ onStartHotseat, onStartAIConfig, onN
                   <span>Map: {scenario.gridW}x{scenario.gridH}</span>
                   <span>Turns: {scenario.maxTurns}</span>
                   <span>Fog: {scenario.fogOfWar ? 'ON' : 'OFF'}</span>
+                  {scenario.weatherEnabled && <span className="text-amber-300 font-bold">Hardcore</span>}
                 </div>
               </button>
             ))}
+            
+            {/* 自定义模式入口 */}
+            <button
+                onClick={() => setIsCustomMode(true)}
+                className="relative p-4 rounded-xl border border-dashed border-slate-600 bg-slate-900/20 hover:bg-slate-800/40 hover:border-slate-500 transition-all text-left flex items-center justify-center gap-2 group"
+            >
+                <span className="text-slate-400 font-bold group-hover:text-blue-300 transition-colors">+ 自定义模式 (Sandbox)</span>
+            </button>
           </div>
         </div>
 

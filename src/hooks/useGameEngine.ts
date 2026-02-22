@@ -1,7 +1,7 @@
 import { useReducer, useEffect, useCallback } from 'react';
 import type { Player, MatchPhase, Mode, Pos } from '../types';
 import { gameReducer, initialState } from '../state/gameReducer';
-import { isValidMove as checkValidMove, getValidOrbs as getAllValidOrbs } from '../game/rules';
+import { isValidMove as checkValidMove, getValidOrbs as getAllValidOrbs, calcNextPos } from '../game/rules';
 import { assessGameState } from '../game/ai';
 
 import type { GameScenario } from '../config/scenarios';
@@ -24,6 +24,7 @@ export interface GameEngine {
   handlePlayerMove: (selectedY: number) => void;
   handleShortScan: () => void;
   handleLongScan: (targetRect: { minX: number; maxX: number; minY: number; maxY: number }) => void;
+  getValidMoves: (player: Player, fromX: number) => { x: number; y: number }[]; // Added
   resources: Record<Player, Resources>;
   lastScan: Record<Player, { turn: number; detectedColumn: number | null; detectedPos: Pos | null } | null>;
   hasPerformedScan: boolean;
@@ -58,10 +59,25 @@ export const useGameEngine = (): GameEngine => {
     return checkValidMove(player, fromX, selectedY, scenario);
   }, [scenario]);
 
-  const getValidOrbs = useCallback(
+  const getValidMoves = useCallback(
     (player: Player, fromX: number) => {
       if (!scenario) return [];
-      return getAllValidOrbs(player, fromX, scenario);
+      const orbs = getAllValidOrbs(player, fromX, scenario);
+      return orbs.map(y => {
+        // 使用 rules 中的逻辑计算具体坐标
+        // 注意：这里需要重新计算 calcNextPos
+        // 由于 calcNextPos 需要 Pos 对象作为输入，我们构造一个临时对象
+        // 这有点笨拙，最好重构 rules 使其分离计算
+        // 实际上 rules.ts 导出了 calcNextPos，直接用即可
+        // 导入 calcNextPos
+        return {
+          y,
+          // 需要临时构造一个 Pos，只有 x 相关
+          // 实际上 calcNextPos 只需要 x，y 只是输入
+          // let's import calcNextPos from rules
+          ...calcNextPos({ x: fromX, y: 0 }, y, scenario)
+        };
+      });
     },
     [scenario]
   );
@@ -130,6 +146,7 @@ export const useGameEngine = (): GameEngine => {
     scenario,
     isHumanTurn,
     isValidMove,
+    getValidMoves, // Exposed
     startHotseat,
     startAIMatch,
     handlePlayerMove,

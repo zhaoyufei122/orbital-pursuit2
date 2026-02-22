@@ -175,40 +175,13 @@ export const GameControls: React.FC<GameControlsProps> = ({
         </div>
       )}
 
-      <div className="flex flex-nowrap overflow-x-auto justify-center gap-2 w-full px-2 pb-2">
-        {orbs.map((y) => {
-          const dx = y - centerOrb;
-          const fromX = currentPlayer === 'A' ? aPos.x : bPos.x;
-          const valid = isValidMove(currentPlayer, fromX, y);
-
-          return (
-            <button
-              key={y}
-              disabled={!valid}
-              onClick={() => onPlayerMove(y)}
-              className={`relative px-2 py-2 min-w-[70px] rounded-lg font-mono text-xs transition-all duration-200 overflow-hidden group border shrink-0 ${
-                valid
-                  ? 'bg-slate-800/80 hover:bg-slate-700 text-white border-slate-600/80 shadow-lg hover:-translate-y-0.5'
-                  : 'bg-slate-900/50 text-slate-600 border-slate-800/50 cursor-not-allowed opacity-50'
-              }`}
-            >
-              <div className="relative z-10 flex flex-col items-center gap-0.5">
-                <span className="font-bold">Orb {y + 1}</span>
-                <span
-                  className={`text-[10px] px-1.5 py-px rounded bg-slate-950/50 ${
-                    valid
-                      ? currentPlayer === 'A'
-                        ? 'text-blue-300'
-                        : 'text-red-300'
-                      : 'text-slate-500'
-                  }`}
-                >
-                  {dx < 0 ? `← ${Math.abs(dx)}` : dx > 0 ? `→ ${dx}` : 'Stay'}
-                </span>
-              </div>
-            </button>
-          );
-        })}
+      {/* 底部提示信息 (原按钮区域) */}
+      <div className="w-full flex justify-center px-4 pb-2">
+        <div className="text-center text-slate-400 text-sm py-2 px-4 rounded-lg bg-slate-900/30 border border-slate-800/50">
+          {isScanning 
+            ? '请在地图上点击任意位置执行扫描...' 
+            : '点击地图上的高亮位置（幽灵图标）以移动单位。'}
+        </div>
       </div>
     </div>
   );

@@ -15,6 +15,7 @@ interface GameBoardProps {
   scanResult: { turn: number; detectedColumn: number | null; detectedPos: Pos | null } | null;
   onCellClick?: (x: number, y: number) => void;
   isScanning?: boolean;
+  validMoves?: { x: number; y: number }[]; // Added
 }
 
 export const GameBoard: React.FC<GameBoardProps> = ({ 
@@ -26,7 +27,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   isHumanTurn,
   scanResult,
   onCellClick,
-  isScanning
+  isScanning,
+  validMoves,
 }) => {
   // 动态计算容器尺寸
   const containerWidth = scenario.gridW * 42 + 100;
@@ -126,15 +128,17 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             const isAArea = x >= scenario.aMinX && x <= scenario.aMaxX;
             const isTargetLock = chebyshevDist({ x, y }, bPos) <= 1;
             
-            // 扫描高亮
             const isScannedColumn = scanResult?.detectedColumn === x;
             const isScannedPos = scanResult?.detectedPos?.x === x && scanResult?.detectedPos?.y === y;
+            
+            // 检查是否是合法移动目标
+            const isValidMoveTarget = !isScanning && validMoves?.some(m => m.x === x && m.y === y);
 
             return (
               <div
                 key={`cell-${x}-${y}`}
-                onClick={() => isScanning && onCellClick?.(x, y)}
-                className={`absolute w-[40px] h-[40px] rounded-sm transition-colors duration-500 backdrop-blur-sm z-10
+                onClick={() => onCellClick?.(x, y)}
+                className={`absolute w-[40px] h-[40px] rounded-sm transition-all duration-300 backdrop-blur-sm z-10
                   ${
                     isAArea
                       ? 'bg-blue-500/5 border border-blue-400/10'
@@ -143,9 +147,21 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                   ${isScannedColumn ? 'bg-amber-500/20 border-amber-500/40' : ''}
                   ${isScannedPos ? 'bg-red-500/30 border-red-500/60' : ''}
                   ${isScanning ? 'cursor-crosshair hover:bg-amber-500/30 hover:border-amber-400' : ''}
+                  ${isValidMoveTarget ? 'cursor-pointer border-2 border-emerald-500/50 bg-emerald-500/20 hover:bg-emerald-500/40 hover:scale-105 shadow-[0_0_10px_rgba(16,185,129,0.3)]' : ''}
                 `}
                 style={{ left: pos.x, top: pos.y }}
               >
+                {/* 移动目标的幽灵图标 */}
+                {isValidMoveTarget && (
+                  <div className="absolute inset-0 flex items-center justify-center opacity-50 pointer-events-none">
+                    {currentPlayer === 'A' ? (
+                      <Satellite size={16} className="text-emerald-300" />
+                    ) : (
+                      <Rocket size={16} className="text-emerald-300" />
+                    )}
+                  </div>
+                )}
+
                 {/* 锁定框只在 B 视角或无迷雾时可见，或者是游戏结束 */}
                 {isTargetLock && matchPhase !== 'gameover' && (currentPlayer === 'B' || !isFogActive) && (
                   <div className="absolute inset-[-1px] border-2 border-red-500/40 bg-red-500/5 rounded-sm pointer-events-none" />

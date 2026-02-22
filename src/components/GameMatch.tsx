@@ -26,6 +26,7 @@ export const GameMatch: React.FC<GameMatchProps> = ({ engine, onBackToMenu }) =>
     isHumanTurn,
     isValidMove,
     handlePlayerMove,
+    getValidMoves, // Exposed
     startHotseat,
     startAIMatch,
     handleShortScan,
@@ -43,24 +44,26 @@ export const GameMatch: React.FC<GameMatchProps> = ({ engine, onBackToMenu }) =>
   };
 
   const handleCellClick = (x: number, y: number) => {
-    if (!isScanning || !scenario) return;
+    if (!scenario) return;
 
-    // 计算 10x10 区域，以 (x, y) 为中心
-    // 10x10 意味着半径约为 5。
-    // 左上角: x - 5, y - 5 (如果 10 是偶数，中心偏左上或右下，这里假设 x-4 到 x+5 或 x-5 到 x+4)
-    // 让我们用 x-5 到 x+4，共 10 格。
-    // y 同理。
-    
-    // 边界检查：minX >= 0, maxX < gridW
-    // 但实际上扫描区域可以超出边界，只是无效而已。为了逻辑简单，我们计算理论区域，reducer 会处理是否命中。
-    
-    const minX = Math.max(0, x - 5);
-    const maxX = Math.min(scenario.gridW - 1, x + 4);
-    const minY = Math.max(0, y - 5);
-    const maxY = Math.min(scenario.gridH - 1, y + 4);
-    
-    handleLongScan({ minX, maxX, minY, maxY });
-    setIsScanning(false);
+    if (isScanning) {
+      // 侦察模式逻辑
+      const minX = Math.max(0, x - 5);
+      const maxX = Math.min(scenario.gridW - 1, x + 4);
+      const minY = Math.max(0, y - 5);
+      const maxY = Math.min(scenario.gridH - 1, y + 4);
+      
+      handleLongScan({ minX, maxX, minY, maxY });
+      setIsScanning(false);
+    } else if (matchPhase === 'playing' && isHumanTurn) {
+      // 移动模式逻辑
+      const validMoves = getValidMoves(currentPlayer, currentPlayer === 'A' ? aPos.x : bPos.x);
+      const targetMove = validMoves.find(m => m.x === x && m.y === y);
+      
+      if (targetMove) {
+        handlePlayerMove(targetMove.y);
+      }
+    }
   };
 
   const currentModeLabel =
@@ -134,6 +137,7 @@ export const GameMatch: React.FC<GameMatchProps> = ({ engine, onBackToMenu }) =>
               ) : null}
               onCellClick={handleCellClick}
               isScanning={isScanning}
+              validMoves={isHumanTurn && matchPhase === 'playing' ? getValidMoves(currentPlayer, currentPlayer === 'A' ? aPos.x : bPos.x) : []}
             />
           )}
         </div>
